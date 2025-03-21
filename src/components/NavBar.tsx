@@ -33,23 +33,42 @@ export default function Navbar() {
   // Mobile navbar (Instagram-like)
   const mobileNavbar = (
     <div className="fixed bottom-0 left-0 right-0 h-14 bg-gray-900 border-t border-gray-800 flex items-center justify-around z-50 md:hidden">
-
-      <NavItem href="/dashboard/map" icon={<MapPin size={20} />} active={isActive('/map')} label="Map" />
-      <NavItem href="/dashboard/messages" icon={<MessageCircle size={20} />} active={isActive('/messages')} label="Messages" />    
+      <NavItem 
+        href="/dashboard/map" 
+        icon={<MapPin size={20} />} 
+        active={isActive('/dashboard/map')} 
+        label="Map" 
+      />
+      <NavItem 
+        href="/dashboard/messages" 
+        icon={<MessageCircle size={20} />} 
+        active={isActive('/dashboard/messages')} 
+        label="Messages" 
+      />    
       {/* Create listing button (centered, highlighted) */}
       <NavItem
-        href="/create"
+        href="/dashboard/create"
         icon={
           <div className="bg-gradient-to-r from-green-500 to-green-600 p-1.5 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]">
             <Plus size={18} className="text-gray-900" />
           </div>
         }
-        active={isActive("/create")}
+        active={isActive("/dashboard/create")}
         label="Create"
       />
       
-      <NavItem href="/dashboard/activity" icon={<Bell size={20} />} active={isActive('/activity')} label="Activity" />
-      <NavItem href="/dashboard/" icon={<User size={20} />} active={isActive('/profile')} label="Profile" />
+      <NavItem 
+        href="/dashboard/activity" 
+        icon={<Bell size={20} />} 
+        active={isActive('/dashboard/activity')} 
+        label="Activity" 
+      />
+      <NavItem 
+        href="/dashboard" 
+        icon={<User size={20} />} 
+        active={isActive('/dashboard')} 
+        label="Profile" 
+      />
     </div>
   );
 
@@ -78,21 +97,21 @@ export default function Navbar() {
         <NavItem 
           href="/dashboard/map" 
           icon={<MapPin size={24} />} 
-          active={isActive('/map')} 
+          active={isActive('/dashboard/map')} 
           label="Map" 
           sidebar 
         />
         <NavItem 
           href="/dashboard/messages" 
           icon={<MessageCircle size={24} />} 
-          active={isActive('/messages')} 
+          active={isActive('/dashboard/messages')} 
           label="Messages" 
           sidebar 
         />
         <NavItem 
           href="/dashboard/create" 
           icon={<Plus size={24} />} 
-          active={isActive('/create')} 
+          active={isActive('/dashboard/create')} 
           label="Create Listing" 
           sidebar 
           highlight 
@@ -100,14 +119,14 @@ export default function Navbar() {
         <NavItem 
           href="/dashboard/activity" 
           icon={<Bell size={24} />} 
-          active={isActive('/activity')} 
+          active={isActive('/dashboard/activity')} 
           label="Activity" 
           sidebar 
         />
         <NavItem 
-          href="/dashboard/" 
+          href="/dashboard" 
           icon={<User size={24} />} 
-          active={isActive('/profile')} 
+          active={isActive('/dashboard')} 
           label="Profile" 
           sidebar 
         />

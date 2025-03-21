@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react';
-import { 
-  ArrowUp, 
-  ArrowDown, 
-  RefreshCw, 
-  Clock, 
-  CheckCircle, 
+import React, { useState } from "react";
+import {
+  ArrowUp,
+  ArrowDown,
+  RefreshCw,
+  Clock,
+  CheckCircle,
   XCircle,
   AlertCircle,
   Filter,
@@ -14,23 +14,23 @@ import {
   Calendar,
   ChevronRight,
   Download,
-  ExternalLink
-} from 'lucide-react';
+  ExternalLink,
+} from "lucide-react";
 
 const ActivityPage = () => {
   // State for filters
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [dateRange, setDateRange] = useState({ from: '', to: '' });
-  type TransactionType = 'buy' | 'sell' | 'send' | 'receive' | 'swap';
-  type TransactionStatus = 'completed' | 'pending' | 'failed';
-  
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  type TransactionType = "buy" | "sell" | "send" | "receive" | "swap";
+  type TransactionStatus = "completed" | "pending" | "failed";
+
   type Counterparty = {
     name: string;
     address: string;
   };
-  
+
   type Transaction = {
     id: string;
     type: TransactionType;
@@ -38,151 +38,174 @@ const ActivityPage = () => {
     timestamp: Date;
     txHash?: string;
   } & (
-    | { type: 'buy' | 'sell'; currency: string; amount: number; fiatAmount: number; fiatCurrency: string; counterparty: Counterparty }
-    | { type: 'send'; currency: string; amount: number; recipient: Counterparty }
-    | { type: 'receive'; currency: string; amount: number; sender: Counterparty }
-    | { type: 'swap'; fromCurrency: string; fromAmount: number; toCurrency: string; toAmount: number }
+    | {
+        type: "buy" | "sell";
+        currency: string;
+        amount: number;
+        fiatAmount: number;
+        fiatCurrency: string;
+        counterparty: Counterparty;
+      }
+    | {
+        type: "send";
+        currency: string;
+        amount: number;
+        recipient: Counterparty;
+      }
+    | {
+        type: "receive";
+        currency: string;
+        amount: number;
+        sender: Counterparty;
+      }
+    | {
+        type: "swap";
+        fromCurrency: string;
+        fromAmount: number;
+        toCurrency: string;
+        toAmount: number;
+      }
   ) & { failureReason?: string };
-  
+
   // Usage in state
-  const [transactions, setTransactions] = useState<Transaction[]>([
+  const [transactions] = useState<Transaction[]>([
     {
-      id: 't1',
-      type: 'buy',
-      status: 'completed',
-      currency: 'BTC',
+      id: "t1",
+      type: "buy",
+      status: "completed",
+      currency: "BTC",
       amount: 0.025,
-      fiatAmount: 1250.00,
-      fiatCurrency: 'NZD',
+      fiatAmount: 1250.0,
+      fiatCurrency: "NZD",
       timestamp: new Date(2025, 2, 18, 14, 30),
       counterparty: {
-        name: 'Alice Crypto',
-        address: '0xF3b217A5F7A9a4D',
+        name: "Alice Crypto",
+        address: "0xF3b217A5F7A9a4D",
       },
-      txHash: '0x8a7d8f234c9a2b1d6f8e7c6b5a4c3d2e1f0',
+      txHash: "0x8a7d8f234c9a2b1d6f8e7c6b5a4c3d2e1f0",
     },
     {
-      id: 't2',
-      type: 'sell',
-      status: 'completed',
-      currency: 'ETH',
+      id: "t2",
+      type: "sell",
+      status: "completed",
+      currency: "ETH",
       amount: 1.5,
-      fiatAmount: 3600.00,
-      fiatCurrency: 'NZD',
+      fiatAmount: 3600.0,
+      fiatCurrency: "NZD",
       timestamp: new Date(2025, 2, 15, 9, 45),
       counterparty: {
-        name: 'Bob Blockchain',
-        address: '0x7D1c43A8C2E53e5F',
+        name: "Bob Blockchain",
+        address: "0x7D1c43A8C2E53e5F",
       },
-      txHash: '0x9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3',
+      txHash: "0x9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3",
     },
     {
-      id: 't3',
-      type: 'send',
-      status: 'completed',
-      currency: 'BTC',
+      id: "t3",
+      type: "send",
+      status: "completed",
+      currency: "BTC",
       amount: 0.075,
       timestamp: new Date(2025, 2, 12, 18, 20),
       recipient: {
-        name: 'Carol Coinbase',
-        address: '0x4A9d6B2c8E7F3B2e',
+        name: "Carol Coinbase",
+        address: "0x4A9d6B2c8E7F3B2e",
       },
-      txHash: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7',
+      txHash: "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7",
     },
     {
-      id: 't4',
-      type: 'receive',
-      status: 'completed',
-      currency: 'ETH',
+      id: "t4",
+      type: "receive",
+      status: "completed",
+      currency: "ETH",
       amount: 0.8,
       timestamp: new Date(2025, 2, 10, 11, 15),
       sender: {
-        name: 'Dave DeFi',
-        address: '0x2E6b9F1c8D7a4B3e',
+        name: "Dave DeFi",
+        address: "0x2E6b9F1c8D7a4B3e",
       },
-      txHash: '0xf1e2d3c4b5a6978d8e9f0a1b2c3d4e5f6',
+      txHash: "0xf1e2d3c4b5a6978d8e9f0a1b2c3d4e5f6",
     },
     {
-      id: 't5',
-      type: 'swap',
-      status: 'completed',
-      fromCurrency: 'BTC',
+      id: "t5",
+      type: "swap",
+      status: "completed",
+      fromCurrency: "BTC",
       fromAmount: 0.012,
-      toCurrency: 'ETH',
+      toCurrency: "ETH",
       toAmount: 0.18,
       timestamp: new Date(2025, 2, 8, 15, 30),
-      txHash: '0x0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4',
+      txHash: "0x0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4",
     },
     {
-      id: 't6',
-      type: 'buy',
-      status: 'pending',
-      currency: 'ETH',
+      id: "t6",
+      type: "buy",
+      status: "pending",
+      currency: "ETH",
       amount: 0.5,
-      fiatAmount: 1200.00,
-      fiatCurrency: 'NZD',
+      fiatAmount: 1200.0,
+      fiatCurrency: "NZD",
       timestamp: new Date(2025, 2, 5, 10, 0),
       counterparty: {
-        name: 'Eve Ethereum',
-        address: '0x9C3a4D7e2B1f8D2b',
+        name: "Eve Ethereum",
+        address: "0x9C3a4D7e2B1f8D2b",
       },
     },
     {
-      id: 't7',
-      type: 'send',
-      status: 'failed',
-      currency: 'BTC',
+      id: "t7",
+      type: "send",
+      status: "failed",
+      currency: "BTC",
       amount: 0.03,
       timestamp: new Date(2025, 2, 1, 13, 45),
       recipient: {
-        name: 'Frank Fintech',
-        address: '0x5B4c3D2e1F0A9b8C7',
+        name: "Frank Fintech",
+        address: "0x5B4c3D2e1F0A9b8C7",
       },
-      failureReason: 'Insufficient funds for gas',
+      failureReason: "Insufficient funds for gas",
     },
   ]);
-  
+
   // Function to get the appropriate icon for transaction type
-const getTransactionIcon = (type: string, status: string) => {
-    if (status === 'failed') {
+  const getTransactionIcon = (type: string, status: string) => {
+    if (status === "failed") {
       return <XCircle size={20} className="text-red-500" />;
     }
-    if (status === 'pending') {
+    if (status === "pending") {
       return <Clock size={20} className="text-yellow-500" />;
     }
-    
+
     switch (type) {
-      case 'buy':
+      case "buy":
         return <ArrowDown size={20} className="text-green-500" />;
-      case 'sell':
+      case "sell":
         return <ArrowUp size={20} className="text-red-400" />;
-      case 'send':
+      case "send":
         return <ArrowUp size={20} className="text-blue-400" />;
-      case 'receive':
+      case "receive":
         return <ArrowDown size={20} className="text-green-500" />;
-      case 'swap':
+      case "swap":
         return <RefreshCw size={20} className="text-purple-400" />;
       default:
         return <Clock size={20} className="text-gray-400" />;
     }
   };
-  
+
   // Function to get status badge colors
-const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400 flex items-center">
             <CheckCircle size={12} className="mr-1" /> Completed
           </span>
         );
-      case 'pending':
+      case "pending":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/20 text-yellow-400 flex items-center">
             <Clock size={12} className="mr-1" /> Pending
           </span>
         );
-      case 'failed':
+      case "failed":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-red-500/20 text-red-400 flex items-center">
             <XCircle size={12} className="mr-1" /> Failed
@@ -192,94 +215,105 @@ const getStatusBadge = (status: string) => {
         return null;
     }
   };
-  
+
   // Function to get formatted date
   const formatDate = (date: Date): string => {
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
     if (diffDays === 0) {
-      return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `Today, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } else if (diffDays === 1) {
-      return `Yesterday, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `Yesterday, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } else if (diffDays < 7) {
-      return `${date.toLocaleDateString([], { weekday: 'long' })}, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `${date.toLocaleDateString([], { weekday: "long" })}, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } else {
-      return date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+      return date.toLocaleDateString([], {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
     }
   };
-  
-  
+
   // Function to get formatted description
   const getTransactionDescription = (tx: Transaction): string => {
     switch (tx.type) {
-      case 'buy':
+      case "buy":
         return `Bought ${tx.amount} ${tx.currency} for ${tx.fiatAmount} ${tx.fiatCurrency}`;
-      case 'sell':
+      case "sell":
         return `Sold ${tx.amount} ${tx.currency} for ${tx.fiatAmount} ${tx.fiatCurrency}`;
-      case 'send':
+      case "send":
         return `Sent ${tx.amount} ${tx.currency} to ${tx.recipient.name}`;
-      case 'receive':
+      case "receive":
         return `Received ${tx.amount} ${tx.currency} from ${tx.sender.name}`;
-      case 'swap':
+      case "swap":
         return `Swapped ${tx.fromAmount} ${tx.fromCurrency} for ${tx.toAmount} ${tx.toCurrency}`;
       default:
-        return 'Unknown transaction';
+        return "Unknown transaction";
     }
   };
-  
-  
+
   // Filter transactions based on active filter and search query
   const filteredTransactions = transactions.filter((tx: Transaction) => {
     // Filter by type
-    if (activeFilter !== 'all' && tx.type !== activeFilter) return false;
-  
+    if (activeFilter !== "all" && tx.type !== activeFilter) return false;
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const description = getTransactionDescription(tx).toLowerCase();
-  
-      let counterpartyName = '';
-      let counterpartyAddress = '';
-  
-      if ('counterparty' in tx && tx.counterparty) {
+
+      let counterpartyName = "";
+      let counterpartyAddress = "";
+
+      if ("counterparty" in tx && tx.counterparty) {
         counterpartyName = tx.counterparty.name.toLowerCase();
         counterpartyAddress = tx.counterparty.address.toLowerCase();
-      } else if ('recipient' in tx && tx.recipient) {
+      } else if ("recipient" in tx && tx.recipient) {
         counterpartyName = tx.recipient.name.toLowerCase();
         counterpartyAddress = tx.recipient.address.toLowerCase();
-      } else if ('sender' in tx && tx.sender) {
+      } else if ("sender" in tx && tx.sender) {
         counterpartyName = tx.sender.name.toLowerCase();
         counterpartyAddress = tx.sender.address.toLowerCase();
       }
-  
-      if (description.includes(query) || counterpartyName.includes(query) || counterpartyAddress.includes(query)) {
+
+      if (
+        description.includes(query) ||
+        counterpartyName.includes(query) ||
+        counterpartyAddress.includes(query)
+      ) {
         return true;
       }
     }
-  
+
     // Filter by date range
     if (dateRange.from && new Date(dateRange.from) > tx.timestamp) return false;
     if (dateRange.to && new Date(dateRange.to) < tx.timestamp) return false;
-  
+
     return true;
   });
-  
-  
-  
+
   // Group transactions by date
-  const groupedTransactions = filteredTransactions.reduce<Record<string, Transaction[]>>((groups, tx) => {
-    const date = tx.timestamp.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
-  
+  const groupedTransactions = filteredTransactions.reduce<
+    Record<string, Transaction[]>
+  >((groups, tx) => {
+    const date = tx.timestamp.toLocaleDateString([], {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
     if (!groups[date]) {
       groups[date] = [];
     }
-  
+
     groups[date].push(tx);
     return groups;
   }, {});
-  
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       {/* Page Header */}
@@ -294,13 +328,16 @@ const getStatusBadge = (status: string) => {
                 <Download size={20} />
               </button>
               <button className="p-2 text-gray-400 hover:text-green-400 transition-all duration-200">
-                <Filter size={20} onClick={() => setShowDateFilter(!showDateFilter)} />
+                <Filter
+                  size={20}
+                  onClick={() => setShowDateFilter(!showDateFilter)}
+                />
               </button>
             </div>
           </div>
         </div>
       </header>
-      
+
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
         {/* Search and Filter */}
@@ -313,78 +350,81 @@ const getStatusBadge = (status: string) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
+            <Search
+              className="absolute left-3 top-3.5 text-gray-400"
+              size={18}
+            />
           </div>
-          
+
           {/* Type Filters */}
           <div className="flex flex-wrap gap-2">
             <button
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeFilter === 'all'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                activeFilter === "all"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveFilter('all')}
+              onClick={() => setActiveFilter("all")}
             >
               All
             </button>
             <button
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                activeFilter === 'buy'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                activeFilter === "buy"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveFilter('buy')}
+              onClick={() => setActiveFilter("buy")}
             >
               <ArrowDown size={14} className="mr-1" />
               <span>Buy</span>
             </button>
             <button
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                activeFilter === 'sell'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                activeFilter === "sell"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveFilter('sell')}
+              onClick={() => setActiveFilter("sell")}
             >
               <ArrowUp size={14} className="mr-1" />
               <span>Sell</span>
             </button>
             <button
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                activeFilter === 'send'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                activeFilter === "send"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveFilter('send')}
+              onClick={() => setActiveFilter("send")}
             >
               <ArrowUp size={14} className="mr-1" />
               <span>Send</span>
             </button>
             <button
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                activeFilter === 'receive'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                activeFilter === "receive"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveFilter('receive')}
+              onClick={() => setActiveFilter("receive")}
             >
               <ArrowDown size={14} className="mr-1" />
               <span>Receive</span>
             </button>
             <button
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                activeFilter === 'swap'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                activeFilter === "swap"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
               }`}
-              onClick={() => setActiveFilter('swap')}
+              onClick={() => setActiveFilter("swap")}
             >
               <RefreshCw size={14} className="mr-1" />
               <span>Swap</span>
             </button>
           </div>
-          
+
           {/* Date Filter */}
           {showDateFilter && (
             <div className="p-4 bg-gray-800/70 backdrop-blur-sm border border-gray-700 rounded-lg">
@@ -394,12 +434,16 @@ const getStatusBadge = (status: string) => {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">From</label>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    From
+                  </label>
                   <input
                     type="date"
                     className="w-full bg-gray-700 border border-gray-600 rounded-md text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
                     value={dateRange.from}
-                    onChange={(e) => setDateRange({...dateRange, from: e.target.value})}
+                    onChange={(e) =>
+                      setDateRange({ ...dateRange, from: e.target.value })
+                    }
                   />
                 </div>
                 <div>
@@ -408,22 +452,29 @@ const getStatusBadge = (status: string) => {
                     type="date"
                     className="w-full bg-gray-700 border border-gray-600 rounded-md text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
                     value={dateRange.to}
-                    onChange={(e) => setDateRange({...dateRange, to: e.target.value})}
+                    onChange={(e) =>
+                      setDateRange({ ...dateRange, to: e.target.value })
+                    }
                   />
                 </div>
               </div>
             </div>
           )}
         </div>
-        
+
         {/* Transactions List */}
         <div className="space-y-6">
           {Object.keys(groupedTransactions).length > 0 ? (
             Object.entries(groupedTransactions)
-            .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
-            .map(([date, txs]) => (
+              .sort(
+                ([dateA], [dateB]) =>
+                  new Date(dateB).getTime() - new Date(dateA).getTime(),
+              )
+              .map(([date, txs]) => (
                 <div key={date}>
-                  <h2 className="text-sm font-medium text-gray-400 mb-3">{date}</h2>
+                  <h2 className="text-sm font-medium text-gray-400 mb-3">
+                    {date}
+                  </h2>
                   <div className="space-y-3">
                     {txs.map((tx) => (
                       <div
@@ -437,11 +488,17 @@ const getStatusBadge = (status: string) => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <h3 className="font-semibold text-white">
-                                {tx.type === 'buy' ? 'Bought' : 
-                                 tx.type === 'sell' ? 'Sold' : 
-                                 tx.type === 'send' ? 'Sent' : 
-                                 tx.type === 'receive' ? 'Received' : 
-                                 tx.type === 'swap' ? 'Swapped' : 'Transaction'}
+                                {tx.type === "buy"
+                                  ? "Bought"
+                                  : tx.type === "sell"
+                                    ? "Sold"
+                                    : tx.type === "send"
+                                      ? "Sent"
+                                      : tx.type === "receive"
+                                        ? "Received"
+                                        : tx.type === "swap"
+                                          ? "Swapped"
+                                          : "Transaction"}
                               </h3>
                               <div className="flex items-center">
                                 {getStatusBadge(tx.status)}
@@ -452,34 +509,39 @@ const getStatusBadge = (status: string) => {
                             </p>
                             <div className="flex flex-wrap items-center text-xs text-gray-400 gap-x-4 gap-y-1">
                               <span className="flex items-center">
-                                <Clock size={12} className="mr-1" /> {formatDate(tx.timestamp)}
+                                <Clock size={12} className="mr-1" />{" "}
+                                {formatDate(tx.timestamp)}
                               </span>
-                              { "counterparty" in tx && tx.counterparty && (
-  <span className="flex items-center truncate max-w-[200px]">
-    With: {tx.counterparty.name}
-  </span>
-)}
-{ "recipient" in tx && tx.recipient && (
-  <span className="flex items-center truncate max-w-[200px]">
-    To: {tx.recipient.name}
-  </span>
-)}
-{ "sender" in tx && tx.sender && (
-  <span className="flex items-center truncate max-w-[200px]">
-    From: {tx.sender.name}
-  </span>
-)}
+                              {"counterparty" in tx && tx.counterparty && (
+                                <span className="flex items-center truncate max-w-[200px]">
+                                  With: {tx.counterparty.name}
+                                </span>
+                              )}
+                              {"recipient" in tx && tx.recipient && (
+                                <span className="flex items-center truncate max-w-[200px]">
+                                  To: {tx.recipient.name}
+                                </span>
+                              )}
+                              {"sender" in tx && tx.sender && (
+                                <span className="flex items-center truncate max-w-[200px]">
+                                  From: {tx.sender.name}
+                                </span>
+                              )}
                               {tx.txHash && (
                                 <span className="flex items-center">
                                   <button className="hover:text-green-400 transition-colors duration-200 flex items-center">
-                                    Explorer <ExternalLink size={10} className="ml-1" />
+                                    Explorer{" "}
+                                    <ExternalLink size={10} className="ml-1" />
                                   </button>
                                 </span>
                               )}
                             </div>
-                            {tx.status === 'failed' && tx.failureReason && (
+                            {tx.status === "failed" && tx.failureReason && (
                               <div className="mt-2 bg-red-500/10 border border-red-500/20 rounded-md p-2 text-xs text-red-400 flex items-start">
-                                <AlertCircle size={14} className="mr-1 flex-shrink-0 mt-0.5" />
+                                <AlertCircle
+                                  size={14}
+                                  className="mr-1 flex-shrink-0 mt-0.5"
+                                />
                                 <span>{tx.failureReason}</span>
                               </div>
                             )}
@@ -496,13 +558,15 @@ const getStatusBadge = (status: string) => {
           ) : (
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
               <RefreshCw size={32} className="mx-auto text-gray-500 mb-2" />
-              <h3 className="text-lg font-medium text-white">No transactions found</h3>
+              <h3 className="text-lg font-medium text-white">
+                No transactions found
+              </h3>
               <p className="text-gray-400 text-sm mt-1">
                 {searchQuery
                   ? `No results for "${searchQuery}"`
-                  : activeFilter !== 'all'
-                  ? `No ${activeFilter} transactions in the selected time period`
-                  : "Your transaction history will appear here"}
+                  : activeFilter !== "all"
+                    ? `No ${activeFilter} transactions in the selected time period`
+                    : "Your transaction history will appear here"}
               </p>
             </div>
           )}

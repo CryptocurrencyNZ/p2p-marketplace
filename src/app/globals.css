@@ -3,8 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -58,32 +56,32 @@
   --color-gray-800: #262626;
   --color-gray-900: #171717;
   --color-gray-950: #0a0a0a;
-  
+
   /* Your existing green accent colors */
   --color-green-300: #86efac;
   --color-green-400: #4ade80;
   --color-green-500: #22c55e;
   --color-green-600: #16a34a;
-  
+
   /* Background colors using the new gray palette */
   --color-background-primary: var(--color-gray-900);
   --color-background-secondary: var(--color-gray-800);
   --color-background-tertiary: var(--color-gray-700);
-  
+
   /* Card and border colors */
   --color-card-background: rgba(38, 38, 38, 0.7); /* gray-800 with opacity */
   --color-border-primary: var(--color-gray-700);
   --color-border-secondary: var(--color-gray-800);
-  
+
   /* Text colors */
   --color-text-primary: #ffffff;
   --color-text-secondary: var(--color-gray-300);
   --color-text-tertiary: var(--color-gray-400);
-  
+
   /* Accent colors */
   --color-accent-primary: var(--color-green-500);
   --color-accent-secondary: var(--color-green-400);
-  
+
   /* Shadow effects */
   --shadow-green-glow: 0 0 15px rgba(34, 197, 94, 0.3);
   --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.3);
@@ -128,41 +126,41 @@
   /* Darker background for a more dramatic Web3 look */
   --background: oklch(0.06 0 0);
   --foreground: oklch(0.985 0 0);
-  
+
   /* Card and popover with slight transparency */
   --card: oklch(0.12 0 0 / 85%);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.12 0 0 / 95%);
   --popover-foreground: oklch(0.985 0 0);
-  
+
   /* Grey metallic accent colors for Web3 feel - removed blue tint */
   --primary: oklch(0.7 0.04 260); /* Dark metallic grey */
   --primary-foreground: oklch(0.06 0 0);
-  
+
   /* Secondary colors that complement the dark theme */
   --secondary: oklch(0.2 0 0);
   --secondary-foreground: oklch(0.985 0 0);
-  
+
   /* Muted colors with grey tint instead of green */
   --muted: oklch(0.18 0 0);
   --muted-foreground: oklch(0.6 0.02 260);
-  
+
   /* Accent color with subtle grey metallic effect */
   --accent: oklch(0.25 0.04 260);
   --accent-foreground: oklch(0.985 0 0);
-  
+
   /* Borders with subtle grey glow effect */
   --border: oklch(0.4 0.03 260 / 25%);
   --input: oklch(0.8 0 0 / 15%);
   --ring: oklch(0.5 0.05 260 / 50%);
-  
+
   /* Chart colors that complement the grey theme */
   --chart-1: oklch(0.6 0.05 260); /* Main grey */
   --chart-2: oklch(0.55 0.05 270);
   --chart-3: oklch(0.5 0.06 250);
   --chart-4: oklch(0.45 0.07 260);
   --chart-5: oklch(0.65 0.04 265);
-  
+
   /* Sidebar colors */
   --sidebar: oklch(0.1 0 0 / 90%);
   --sidebar-foreground: oklch(0.95 0 0);
@@ -181,18 +179,22 @@
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Add transparency to cards and containers */
-  .card, .container, .popover {
+  .card,
+  .container,
+  .popover {
     @apply backdrop-blur-sm bg-card/90;
   }
-  
+
   /* Add subtle glow to interactive elements on hover */
-  .btn:hover, .button:hover, a:hover {
+  .btn:hover,
+  .button:hover,
+  a:hover {
     @apply transition-all duration-300;
     box-shadow: 0 0 8px var(--color-primary);
   }
-  
+
   /* Add grey outlines for focus states */
   *:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -202,7 +204,8 @@
 
 /* Optional: Add global animations for grid-related elements */
 @keyframes subtle-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 4px var(--color-primary);
   }
   50% {

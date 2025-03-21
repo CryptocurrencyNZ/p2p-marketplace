@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getChatsByUserId, findOrCreateUser } from "@/lib/db/utils";
+import { getChats, formatRelativeTime, formatUserDisplay } from "@/lib/utils";
 
 // Define types for our chat objects
 interface Message {
@@ -43,103 +43,80 @@ export async function GET(request: Request) {
     const userName = url.searchParams.get("userId") || "buyer123";
     const filter = url.searchParams.get("filter"); // all, starred, unread
     
-    // Get user from database
-    const user = await findOrCreateUser(userName);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    // Get all chats from JSON file
+    const data = await getChats();
     
-    // Get all chats from database
-    const userChats = await getChatsByUserId(user.id);
+    // Filter chats for the user
+    const userChats = data.chats.filter((chat: Chat) => 
+      chat.user1 === userName || chat.user2 === userName
+    );
 
     // Format chats to match frontend expectations
     const formattedChats: FormattedChat[] = userChats
-      .map((chat) => {
+      .map((chat: Chat) => {
         // Find the other participant
-        const otherParticipant = chat.participants.find(
-          (p) => p.userId !== user.id
-        );
+        const otherUser = chat.user1 === userName ? chat.user2 : chat.user1;
         
-        if (!otherParticipant || !otherParticipant.user) {
-          return null; // Skip chats where we can't find the other user
-        }
-        
-        const otherUser = otherParticipant.user;
+        // Get user display info
+        const userDisplay = formatUserDisplay(otherUser);
         
         // Get last message
         const lastMessage = chat.messages.length > 0 
-          ? chat.messages[chat.messages.length - 1] 
-          : null;
+          ? chat.messages[chat.messages.length - 1].content 
+          : "No messages";
         
         // Calculate unread count (messages from other user that aren't read)
         const unreadCount = chat.messages.filter(
-          (msg) => msg.senderId !== user.id && msg.status !== "read"
+          (msg: Message) => msg.sender !== userName && msg.status !== "read"
         ).length;
 
         // Format timestamp to human-readable
         let timestamp = "No messages";
-        if (lastMessage) {
-          const date = new Date(lastMessage.timestamp);
-          const now = new Date();
-          const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-          
-          if (diffMinutes < 1) {
-            timestamp = "Just now";
-          } else if (diffMinutes < 60) {
-            timestamp = `${diffMinutes}m ago`;
-          } else if (diffMinutes < 24 * 60) {
-            timestamp = `${Math.floor(diffMinutes / 60)}h ago`;
-          } else if (diffMinutes < 48 * 60) {
-            timestamp = "Yesterday";
-          } else {
-            timestamp = `${Math.floor(diffMinutes / (60 * 24))} days ago`;
-          }
+        if (chat.messages.length > 0) {
+          const lastTimestamp = chat.messages[chat.messages.length - 1].timestamp;
+          timestamp = formatRelativeTime(lastTimestamp);
         }
 
-        // Format username to display name
-        const name = otherUser.username === "seller456" 
-          ? "Alice Crypto" 
-          : otherUser.username === "trader789"
-            ? "Carol Coinbase"
-            : "Bob Trader";
-            
-        // Format address
-        const address = otherUser.username === "seller456" 
-          ? "0xF3b2...9a4D" 
-          : otherUser.username === "trader789"
-            ? "0x4A9d...7B2e"
-            : "0x7D1c...3e5F";
-
-        // Create a formatted chat object
         return {
           id: chat.id.toString(),
           user: {
-            name,
-            address,
-            avatar: "/api/placeholder/40/40",
-            status: Math.random() > 0.5 ? "online" : "offline" // Mock status
+            name: userDisplay.name,
+            address: userDisplay.address,
+            avatar: userDisplay.avatar,
+            status: userDisplay.status
           },
-          lastMessage: lastMessage ? lastMessage.content : "No messages yet",
+          lastMessage,
           timestamp,
           unread: unreadCount,
           starred: chat.starred || false
         };
-      })
-      .filter((chat): chat is FormattedChat => chat !== null); // Type guard to filter out nulls
-
-    // Apply additional filters
+      });
+    
+    // Apply filters
     let filteredChats = formattedChats;
     if (filter === "starred") {
-      filteredChats = formattedChats.filter((chat) => chat.starred);
+      filteredChats = formattedChats.filter(chat => chat.starred);
     } else if (filter === "unread") {
-      filteredChats = formattedChats.filter((chat) => chat.unread > 0);
+      filteredChats = formattedChats.filter(chat => chat.unread > 0);
     }
 
-    return NextResponse.json({ 
-      conversations: filteredChats 
-    }, { status: 200 });
+    // Sort by most recent message first
+    filteredChats.sort((a, b) => {
+      const chatA = userChats.find(c => c.id.toString() === a.id);
+      const chatB = userChats.find(c => c.id.toString() === b.id);
+      
+      if (!chatA?.messages.length) return 1;
+      if (!chatB?.messages.length) return -1;
+      
+      const timeA = new Date(chatA.messages[chatA.messages.length - 1].timestamp).getTime();
+      const timeB = new Date(chatB.messages[chatB.messages.length - 1].timestamp).getTime();
+      
+      return timeB - timeA;
+    });
+
+    return NextResponse.json({ chats: filteredChats });
   } catch (error) {
-    console.error("Error in chats list endpoint:", error);
+    console.error("Error in chats endpoint:", error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }

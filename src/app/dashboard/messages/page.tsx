@@ -1,88 +1,68 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, MessageSquare, Clock, Star, Settings, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+// Define interfaces for type safety
+interface ChatUser {
+  name: string;
+  address: string;
+  avatar: string;
+  status: string;
+}
+
+interface Conversation {
+  id: string;
+  user: ChatUser;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  starred: boolean;
+}
 
 const ChatsList = () => {
-  // Example data for chat conversations
-  const [conversations, setConversations] = useState([
-    {
-      id: '1',
-      user: {
-        name: 'Alice Crypto',
-        address: '0xF3b2...9a4D',
-        avatar: '/api/placeholder/40/40',
-        status: 'online'
-      },
-      lastMessage: 'Hey, have you checked the latest token price?',
-      timestamp: '15m ago',
-      unread: 3,
-      starred: true
-    },
-    {
-      id: '2',
-      user: {
-        name: 'Bob Blockchain',
-        address: '0x7D1c...3e5F',
-        avatar: '/api/placeholder/40/40',
-        status: 'offline'
-      },
-      lastMessage: 'AHAHAHAHAH',
-      timestamp: '2h ago',
-      unread: 0,
-      starred: false
-    },
-    {
-      id: '3',
-      user: {
-        name: 'Carol Coinbase',
-        address: '0x4A9d...7B2e',
-        avatar: '/api/placeholder/40/40',
-        status: 'online'
-      },
-      lastMessage: 'The smart contract has been deployed successfully',
-      timestamp: 'Yesterday',
-      unread: 1,
-      starred: false
-    },
-    {
-      id: '4',
-      user: {
-        name: 'Dave DeFi',
-        address: '0x2E6b...1F8c',
-        avatar: '/api/placeholder/40/40',
-        status: 'idle'
-      },
-      lastMessage: 'Can you help me with the staking process?',
-      timestamp: '2 days ago',
-      unread: 0,
-      starred: true
-    },
-    {
-      id: '5',
-      user: {
-        name: 'Eve Ethereum',
-        address: '0x9C3a...8D2b',
-        avatar: '/api/placeholder/40/40',
-        status: 'offline'
-      },
-      lastMessage: 'Looking forward to the new protocol update',
-      timestamp: '1 week ago',
-      unread: 0,
-      starred: false
-    }
-  ]);
+  const router = useRouter();
+  // State for conversations
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Filter conversations based on active filter and search query
-  const filteredConversations = conversations.filter(convo => {
-    // Filter by type
-    if (activeFilter === 'starred' && !convo.starred) return false;
-    if (activeFilter === 'unread' && convo.unread === 0) return false;
+  // Fetch conversations from the API
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        setLoading(true);
+        // Current user - in production this would come from auth
+        const currentUser = "buyer123"; // Default user for demo
+        
+        // Call the chats API with the current filter
+        const url = `/api/chats?userId=${currentUser}${activeFilter !== 'all' ? `&filter=${activeFilter}` : ''}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch conversations');
+        }
+        
+        const data = await response.json();
+        setConversations(data.chats || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching conversations:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Filter by search query
+    fetchConversations();
+  }, [activeFilter]); // Re-fetch when filter changes
+  
+  // Filter conversations based on search query
+  const filteredConversations = conversations.filter(convo => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -91,9 +71,49 @@ const ChatsList = () => {
         convo.lastMessage.toLowerCase().includes(query)
       );
     }
-    
     return true;
   });
+
+  // Handle clicking on a conversation
+  const handleConversationClick = (id: string) => {
+    router.push(`/dashboard/messages/${id}`);
+  };
+
+  // Handle starring a conversation
+  const handleStarConversation = async (e: React.MouseEvent, id: string, isStarred: boolean) => {
+    e.stopPropagation(); // Prevent triggering the conversation click
+    
+    try {
+      const response = await fetch('/api/chats/star', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: id,
+          starred: !isStarred
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update star status');
+      }
+      
+      // Update local state
+      setConversations(prevConversations =>
+        prevConversations.map(convo =>
+          convo.id === id ? { ...convo, starred: !isStarred } : convo
+        )
+      );
+    } catch (err) {
+      console.error('Error starring conversation:', err);
+    }
+  };
+  
+  // Handle creating a new conversation
+  const handleNewConversation = () => {
+    router.push('/dashboard/messages/new');
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
@@ -108,7 +128,10 @@ const ChatsList = () => {
               <button className="p-2 text-gray-400 hover:text-green-400 transition-all duration-200">
                 <Settings size={20} />
               </button>
-              <button className="bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg p-2 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-300">
+              <button 
+                onClick={handleNewConversation}
+                className="bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg p-2 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-300"
+              >
                 <Plus size={20} />
               </button>
             </div>
@@ -170,10 +193,28 @@ const ChatsList = () => {
         
         {/* Conversations List */}
         <div className="space-y-3">
-          {filteredConversations.length > 0 ? (
+          {loading ? (
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
+              <div className="animate-pulse flex space-x-4 justify-center">
+                <div className="rounded-full bg-gray-700 h-10 w-10"></div>
+                <div className="flex-1 space-y-3 max-w-[250px]">
+                  <div className="h-2 bg-gray-700 rounded"></div>
+                  <div className="h-2 bg-gray-700 rounded w-5/6"></div>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-4">Loading conversations...</p>
+            </div>
+          ) : error ? (
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
+              <MessageSquare size={32} className="mx-auto text-red-500 mb-2" />
+              <h3 className="text-lg font-medium text-white">Error loading conversations</h3>
+              <p className="text-gray-400 text-sm mt-1">{error}</p>
+            </div>
+          ) : filteredConversations.length > 0 ? (
             filteredConversations.map((convo) => (
               <div
                 key={convo.id}
+                onClick={() => handleConversationClick(convo.id)}
                 className="bg-gray-800/60 backdrop-blur-sm border border-gray-700 rounded-lg p-3 transition-all duration-200 hover:shadow-[0_0_10px_rgba(34,197,94,0.2)] cursor-pointer flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
@@ -199,9 +240,12 @@ const ChatsList = () => {
                         {convo.user.name}
                       </h3>
                       <div className="flex items-center ml-2 space-x-1">
-                        {convo.starred && (
-                          <Star size={12} className="text-green-400 fill-green-400" />
-                        )}
+                        <button
+                          onClick={(e) => handleStarConversation(e, convo.id, convo.starred)}
+                          className="text-gray-400 hover:text-green-400"
+                        >
+                          <Star size={12} className={convo.starred ? "text-green-400 fill-green-400" : ""} />
+                        </button>
                         <span className="text-xs text-gray-400 flex items-center">
                           <Clock size={12} className="mr-1" /> {convo.timestamp}
                         </span>
@@ -253,7 +297,10 @@ const ChatsList = () => {
         <button className="text-gray-400 hover:text-green-300 transition-all duration-200">
           <Star size={20} />
         </button>
-        <button className="bg-gradient-to-r from-green-600 to-green-500 text-gray-900 rounded-full p-2 shadow-[0_0_10px_rgba(34,197,94,0.3)] -mt-6">
+        <button 
+          onClick={handleNewConversation}
+          className="bg-gradient-to-r from-green-600 to-green-500 text-gray-900 rounded-full p-2 shadow-[0_0_10px_rgba(34,197,94,0.3)] -mt-6"
+        >
           <Plus size={24} />
         </button>
         <button className="text-gray-400 hover:text-green-300 transition-all duration-200">

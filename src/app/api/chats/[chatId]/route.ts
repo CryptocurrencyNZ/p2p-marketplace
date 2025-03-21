@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getChatById } from "@/lib/db/utils";
-import { findOrCreateUser } from "@/lib/db/utils";
+import { getChats, formatUserDisplay } from "@/lib/utils";
 
 export async function GET(
   request: Request,
@@ -11,44 +10,32 @@ export async function GET(
     // Get current user from query param (will be replaced with auth in production)
     const url = new URL(request.url);
     const currentUserName = url.searchParams.get("userId") || "buyer123";
-
-    // Get user from database
-    const currentUser = await findOrCreateUser(currentUserName);
-    if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
     
-    // Get chat from database
-    const chat = await getChatById(Number(chatId));
+    // Get chat from file
+    const data = await getChats();
+    const chat = data.chats.find((c: any) => c.id === Number(chatId));
+    
     if (!chat) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    // Find the other participant
-    const otherParticipant = chat.participants.find(
-      (p) => p.userId !== currentUser.id
-    );
-
-    if (!otherParticipant) {
-      return NextResponse.json({ error: "Chat participant not found" }, { status: 404 });
+    // Make sure the user is part of this chat
+    if (chat.user1 !== currentUserName && chat.user2 !== currentUserName) {
+      return NextResponse.json(
+        { error: "User is not a participant in this chat" },
+        { status: 403 }
+      );
     }
 
-    // Get the other user's info
-    const otherUser = otherParticipant.user;
+    // Get the other user
+    const otherUser = chat.user1 === currentUserName ? chat.user2 : chat.user1;
     
     // Format user data for frontend
-    const formattedUser = {
-      name: otherUser.username === "seller456" ? "Alice Crypto" : "Bob Trader",
-      address: otherUser.username === "seller456" ? "0xF3b217A5F7A9a4D" : "0x1234...5678",
-      avatar: "/api/placeholder/48/48",
-      status: "online",
-      lastSeen: "Active now",
-      verified: true
-    };
-
+    const userDisplay = formatUserDisplay(otherUser);
+    
     // Process messages to match frontend format
-    const formattedMessages = chat.messages.map((msg) => {
-      // Format timestamp from ISO to AM/PM format
+    const formattedMessages = chat.messages.map((msg: any) => {
+      // Format timestamp to AM/PM format
       const date = new Date(msg.timestamp);
       const formattedTime = date.toLocaleTimeString([], { 
         hour: '2-digit', 
@@ -57,7 +44,7 @@ export async function GET(
 
       return {
         id: `m${msg.id}`, // Frontend uses string IDs with 'm' prefix
-        sender: msg.senderId === currentUser.id ? "me" : "them",
+        sender: msg.sender === currentUserName ? "me" : "them",
         content: msg.content,
         timestamp: formattedTime,
         status: msg.status || "delivered",
@@ -71,12 +58,19 @@ export async function GET(
     });
 
     return NextResponse.json({ 
-      id: chat.id,
-      user: formattedUser,
+      id: chat.id.toString(),
+      user: {
+        name: userDisplay.name,
+        address: userDisplay.fullAddress, // Full address for the chat detail page
+        avatar: "/api/placeholder/48/48", // Larger avatar for the chat page
+        status: userDisplay.status,
+        lastSeen: userDisplay.status === "online" ? "Active now" : "Last seen recently",
+        verified: true
+      },
       messages: formattedMessages,
-      encrypted: chat.encrypted,
-      verified: chat.verified,
-      starred: chat.starred
+      encrypted: chat.encrypted !== false, // Default to true if not specified
+      verified: chat.verified !== false, // Default to true if not specified
+      starred: chat.starred || false
     }, { status: 200 });
   } catch (error) {
     console.error("Error in chat detail endpoint:", error);

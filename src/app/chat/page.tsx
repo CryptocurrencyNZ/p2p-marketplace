@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Message {
   id: number;
@@ -14,12 +14,7 @@ export default function ChatPage() {
   const [chatId, setChatId] = useState("1");
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Fetch messages when the component loads
-  useEffect(() => {
-    fetchMessages();
-  }, [chatId]);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const response = await fetch(`/api/chats/${chatId}`);
       const data = await response.json();
@@ -29,7 +24,12 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
-  };
+  }, [chatId]);
+
+  // Fetch messages when the component loads
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
 
   const sendMessage = async () => {
     if (!message.trim()) return;

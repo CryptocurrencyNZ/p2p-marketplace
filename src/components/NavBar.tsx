@@ -49,7 +49,7 @@ export default function Navbar() {
       />
       
       <NavItem href="/dashboard/activity" icon={<Bell size={20} />} active={isActive('/activity')} label="Activity" />
-      <NavItem href="/dashboard/profile" icon={<User size={20} />} active={isActive('/profile')} label="Profile" />
+      <NavItem href="/dashboard/" icon={<User size={20} />} active={isActive('/profile')} label="Profile" />
     </div>
   );
 
@@ -105,7 +105,7 @@ export default function Navbar() {
           sidebar 
         />
         <NavItem 
-          href="/dashboard/profile" 
+          href="/dashboard/" 
           icon={<User size={24} />} 
           active={isActive('/profile')} 
           label="Profile" 

@@ -1,4 +1,5 @@
 import { defineConfig } from "drizzle-kit";
+
 import * as dotenv from "dotenv";
 import fs from "fs";
 

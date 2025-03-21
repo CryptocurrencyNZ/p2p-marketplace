@@ -53,166 +53,372 @@ const OnboardingFlow: React.FC = () => {
     {
       title: "P2P Trading Tips",
       content: (
-        <div className="space-y-2">
-          <p className="font-medium">Your guide to safe peer-to-peer trading:</p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Always verify the real identity of your trader</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Use secure payment methods that cannot be reversed</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Be aware that payment screenshots can be easily fabricated</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Use Kiwi-based P2P traders, avoid overseas "NZ" traders</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Meet your trader in person at a secure, public location</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Trust your intuition if something feels suspicious</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Consider test trades of smaller amounts first</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Always speak with traders via voice call before meeting</span>
-            </li>
-          </ul>
+        <div className="space-y-3">
+          <p className="font-medium text-green-300">Your guide to safe peer-to-peer trading:</p>
+          <div className="grid gap-3">
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Verify Identity</h4>
+                <p className="text-xs text-gray-300">Always verify the real identity of your trading partner before proceeding.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Use Secure Payments</h4>
+                <p className="text-xs text-gray-300">Choose payment methods that cannot be easily reversed, like cash or crypto.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Be Skeptical of Screenshots</h4>
+                <p className="text-xs text-gray-300">Payment screenshots can be easily fabricated. Verify transactions independently.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Choose Local Traders</h4>
+                <p className="text-xs text-gray-300">Use Kiwi-based P2P traders and avoid those claiming to be from NZ but operating overseas.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Meet in Person</h4>
+                <p className="text-xs text-gray-300">Conduct trades in public, secure locations like libraries or near police stations.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )
     },
     {
       title: "Known Scams",
       content: (
-        <div className="space-y-2">
-          <p className="font-medium">Be aware of these common crypto scams:</p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span><span className="text-green-400 font-medium">Impersonation:</span> Scammers pose as trusted entities to gain your trust</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span><span className="text-green-400 font-medium">Payment reversal:</span> Transactions get reversed after you've sent crypto</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span><span className="text-green-400 font-medium">Phishing:</span> Fake websites or emails designed to steal credentials</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span><span className="text-green-400 font-medium">Fake escrow:</span> Scammers use sock puppet accounts as "middlemen"</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span><span className="text-green-400 font-medium">Fake wallets:</span> Backdoored wallets that can be emptied remotely</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span><span className="text-green-400 font-medium">Social engineering:</span> Manipulative tactics to establish false trust</span>
-            </li>
-          </ul>
+        <div className="space-y-3">
+          <p className="font-medium text-green-300">Be aware of these common crypto scams:</p>
+          <div className="grid gap-3">
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Impersonation</h4>
+                <p className="text-xs text-gray-300">Scammers pose as trusted entities to gain your trust and steal your assets.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <polyline points="1 4 1 10 7 10"></polyline>
+                  <polyline points="23 20 23 14 17 14"></polyline>
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Payment Reversal</h4>
+                <p className="text-xs text-gray-300">Transactions get reversed after you've sent the crypto, resulting in total loss.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Phishing</h4>
+                <p className="text-xs text-gray-300">Fake websites and emails designed to steal your credentials and access your funds.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Fake Escrow</h4>
+                <p className="text-xs text-gray-300">Scammers use sock puppet accounts as "middlemen" to steal your funds.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )
     },
     {
       title: "Buying Guide",
       content: (
-        <div className="space-y-2">
-          <p className="font-medium">How to buy cryptocurrency safely:</p>
-          <ol className="space-y-2 text-sm list-decimal list-inside">
-            <li className="pl-1">Locate a seller in your regional channel</li>
-            <li className="pl-1">Create a post with your requirements:
-              <ul className="ml-5 mt-1 space-y-1">
-                <li>- Location</li>
-                <li>- Crypto type</li>
-                <li>- Volume</li>
-                <li>- Price in NZD</li>
-              </ul>
-            </li>
-            <li className="pl-1">Await offers and check the reputation system</li>
-            <li className="pl-1">Perform background and KYC checks:
-              <ul className="ml-5 mt-1 space-y-1">
-                <li>- Verify seller reputation</li>
-                <li>- Consider meeting in person</li>
-                <li>- Start with small amounts</li>
-                <li>- Get vouches from others</li>
-              </ul>
-            </li>
-            <li className="pl-1">Complete the trade</li>
-            <li className="pl-1">Post trade details to build your reputation</li>
-          </ol>
+        <div className="space-y-3">
+          <p className="font-medium text-green-300">How to buy cryptocurrency safely:</p>
+          <div className="grid gap-3">
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                  <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                  <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Find a Seller</h4>
+                <p className="text-xs text-gray-300">Locate a seller in your regional channel who has good reputation and reviews.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Create Your Post</h4>
+                <p className="text-xs text-gray-300">Specify location, crypto type, volume, and price in NZD in your post.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <polyline points="9 11 12 14 22 4"></polyline>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Verify Reputation</h4>
+                <p className="text-xs text-gray-300">Check the reputation system and get vouches from other traders.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Execute Safely</h4>
+                <p className="text-xs text-gray-300">Meet in person, start with small amounts, and complete the trade methodically.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Build Reputation</h4>
+                <p className="text-xs text-gray-300">Post trade details afterward to build your own reputation in the community.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )
     },
     {
       title: "Selling Guide",
       content: (
-        <div className="space-y-2">
-          <p className="font-medium">How to sell cryptocurrency safely:</p>
-          <ol className="space-y-2 text-sm list-decimal list-inside">
-            <li className="pl-1">Post in your regional channel (avoid duplicates)</li>
-            <li className="pl-1">Format your listing clearly:
-              <ul className="ml-5 mt-1 space-y-1">
-                <li>- Crypto type</li>
-                <li>- Volume available</li>
-                <li>- Price (spot, +%, or NZD value)</li>
-              </ul>
-            </li>
-            <li className="pl-1">Wait for interested buyers to contact you</li>
-            <li className="pl-1">Perform due diligence on potential buyers</li>
-            <li className="pl-1">Complete the trade safely</li>
-            <li className="pl-1">Post trade details to increase your reputation</li>
-          </ol>
+        <div className="space-y-3">
+          <p className="font-medium text-green-300">How to sell cryptocurrency safely:</p>
+          <div className="grid gap-3">
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Choose Your Channel</h4>
+                <p className="text-xs text-gray-300">Post in your regional channel once to avoid duplicate listings.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <line x1="17" y1="10" x2="3" y2="10"></line>
+                  <line x1="21" y1="6" x2="3" y2="6"></line>
+                  <line x1="21" y1="14" x2="3" y2="14"></line>
+                  <line x1="17" y1="18" x2="3" y2="18"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Format Your Listing</h4>
+                <p className="text-xs text-gray-300">Clearly state crypto type, volume available, and pricing terms.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Screen Buyers</h4>
+                <p className="text-xs text-gray-300">Wait for interested buyers and carefully evaluate their inquiries.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"></path>
+                  <path d="M18 9V5l-4-4"></path>
+                  <path d="M13 5v4h4"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Due Diligence</h4>
+                <p className="text-xs text-gray-300">Perform thorough background checks on potential buyers.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 8v4l2 2"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Trade Safely</h4>
+                <p className="text-xs text-gray-300">Meet in a secure location and complete the transaction methodically.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )
     },
     {
       title: "Platform Risks",
       content: (
-        <div className="space-y-2">
-          <p className="font-medium">Important risk acknowledgments:</p>
-          <ul className="space-y-2 text-sm">
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Cryptocurrency values can be highly volatile</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>P2P trading carries inherent counterparty risks</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>You are responsible for your own trading decisions</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>The platform provides tools but cannot guarantee safety</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>You should never invest more than you can afford to lose</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>Cryptocurrency transactions are generally irreversible</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400">•</span>
-              <span>You are responsible for securing your own crypto assets</span>
-            </li>
-          </ul>
+        <div className="space-y-3">
+          <p className="font-medium text-green-300">Important risk acknowledgments:</p>
+          <div className="grid gap-3">
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <line x1="12" y1="2" x2="12" y2="6"></line>
+                  <line x1="12" y1="18" x2="12" y2="22"></line>
+                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                  <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                  <line x1="2" y1="12" x2="6" y2="12"></line>
+                  <line x1="18" y1="12" x2="22" y2="12"></line>
+                  <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                  <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Volatility</h4>
+                <p className="text-xs text-gray-300">Cryptocurrency values can fluctuate dramatically in short periods of time.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Counterparty Risk</h4>
+                <p className="text-xs text-gray-300">P2P trading inherently carries risks associated with dealing with unknown parties.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Personal Responsibility</h4>
+                <p className="text-xs text-gray-300">You are solely responsible for your trading decisions and securing your assets.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                  <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                  <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Limited Recourse</h4>
+                <p className="text-xs text-gray-300">Cryptocurrency transactions are generally irreversible with no chargebacks.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 flex items-start gap-3">
+              <div className="bg-green-500/20 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M2 22h20"></path>
+                  <path d="M21 7v12c0 1.1-.9 2-2 2H5a2 2 0 0 1-2-2V7l9-5 9 5Z"></path>
+                  <path d="M9 21v-7.3c0-1 .7-1.8 1.5-1.8s1.5.8 1.5 1.8V21"></path>
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Financial Risk</h4>
+                <p className="text-xs text-gray-300">Never invest more than you can afford to lose in cryptocurrency.</p>
+              </div>
+            </div>
+          </div>
         </div>
       )
     },
@@ -344,7 +550,7 @@ const OnboardingFlow: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-whiterelative">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-white relative">
       {/* Background elements */}
       <div className="absolute inset-0 bg-[url('/CNZ_logo.png')] bg-cover opacity-10"></div>
 

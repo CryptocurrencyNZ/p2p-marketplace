@@ -244,25 +244,6 @@ const ChatsList = () => {
           )}
         </div>
       </main>
-      
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-14 bg-gray-900 border-t border-gray-800 flex items-center justify-around z-50 md:hidden">
-        <button className="text-green-400">
-          <MessageSquare size={20} />
-        </button>
-        <button className="text-gray-400 hover:text-green-300 transition-all duration-200">
-          <Star size={20} />
-        </button>
-        <button className="bg-gradient-to-r from-green-600 to-green-500 text-gray-900 rounded-full p-2 shadow-[0_0_10px_rgba(34,197,94,0.3)] -mt-6">
-          <Plus size={24} />
-        </button>
-        <button className="text-gray-400 hover:text-green-300 transition-all duration-200">
-          <Clock size={20} />
-        </button>
-        <button className="text-gray-400 hover:text-green-300 transition-all duration-200">
-          <Settings size={20} />
-        </button>
-      </nav>
     </div>
   );
 };

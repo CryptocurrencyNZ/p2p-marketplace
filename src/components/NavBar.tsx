@@ -135,7 +135,7 @@ export default function Navbar() {
       {mobileNavbar}
       {desktopSidebar}
       {/* Content padding - adds margin for the navbar/sidebar */}
-      <div className="pb-14 md:pb-0 md:pl-20 xl:pl-64"></div>
+      <div className="md:pl-20 xl:pl-64"></div>
     </>
   );
 }

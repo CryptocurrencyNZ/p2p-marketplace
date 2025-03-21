@@ -24,12 +24,20 @@ export async function POST(request: Request) {
       sender,
       content,
       timestamp: new Date().toISOString(),
+      status: "sent" // Initial status is "sent"
     };
 
     chat.messages.push(newMessage);
     await saveChats(data);
 
-    return NextResponse.json({ message: newMessage }, { status: 201 });
+    // In a real app with websockets, we would broadcast this message to other users
+    // After 1 second, we would update the status to "delivered"
+    // After the recipient reads it, we would update to "read"
+
+    return NextResponse.json({ 
+      message: newMessage,
+      success: true 
+    }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: "Something went wrong" },

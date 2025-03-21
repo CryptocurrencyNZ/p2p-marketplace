@@ -20,3 +20,29 @@ export async function getChats() {
 export async function saveChats(chats: any) {
   await fs.writeFile(chatsFilePath, JSON.stringify(chats, null, 2))
 }
+
+// Update message status
+export async function updateMessageStatus(chatId: number, messageId: number, status: 'sent' | 'delivered' | 'read') {
+  // Get current chats
+  const data = await getChats();
+  
+  // Find the chat
+  const chat = data.chats.find((c: any) => c.id === chatId);
+  if (!chat) {
+    throw new Error("Chat not found");
+  }
+  
+  // Find the message
+  const message = chat.messages.find((m: any) => m.id === messageId);
+  if (!message) {
+    throw new Error("Message not found");
+  }
+  
+  // Update status
+  message.status = status;
+  
+  // Save changes
+  await saveChats(data);
+  
+  return message;
+}

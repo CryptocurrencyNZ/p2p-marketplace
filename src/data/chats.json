@@ -1,0 +1,89 @@
+{
+  "chats": [
+    {
+      "id": 1,
+      "user1": "buyer123",
+      "user2": "seller456",
+      "messages": [
+        {
+          "id": 1,
+          "sender": "buyer123",
+          "content": "Hi, is this item still available?",
+          "timestamp": "2025-03-21T05:58:08.115Z"
+        },
+        {
+          "id": 2,
+          "sender": "buyer123",
+          "content": "hello",
+          "timestamp": "2025-03-21T06:03:26.216Z"
+        },
+        {
+          "id": 3,
+          "sender": "buyer123",
+          "content": "yes sur",
+          "timestamp": "2025-03-21T06:04:49.620Z"
+        },
+        {
+          "id": 4,
+          "sender": "buyer123",
+          "content": "jdfifkldsjflk",
+          "timestamp": "2025-03-21T06:04:51.412Z"
+        },
+        {
+          "id": 5,
+          "sender": "buyer123",
+          "content": "gdf",
+          "timestamp": "2025-03-21T06:04:51.942Z"
+        },
+        {
+          "id": 6,
+          "sender": "buyer123",
+          "content": "gfds",
+          "timestamp": "2025-03-21T06:04:52.127Z"
+        },
+        {
+          "id": 7,
+          "sender": "buyer123",
+          "content": "g",
+          "timestamp": "2025-03-21T06:04:52.236Z"
+        },
+        {
+          "id": 8,
+          "sender": "buyer123",
+          "content": "fdg",
+          "timestamp": "2025-03-21T06:04:52.372Z"
+        },
+        {
+          "id": 9,
+          "sender": "buyer123",
+          "content": "df",
+          "timestamp": "2025-03-21T06:04:52.499Z"
+        },
+        {
+          "id": 10,
+          "sender": "buyer123",
+          "content": "g",
+          "timestamp": "2025-03-21T06:04:52.623Z"
+        },
+        {
+          "id": 11,
+          "sender": "buyer123",
+          "content": "g",
+          "timestamp": "2025-03-21T06:04:52.744Z"
+        },
+        {
+          "id": 12,
+          "sender": "buyer123",
+          "content": "df",
+          "timestamp": "2025-03-21T06:04:52.889Z"
+        },
+        {
+          "id": 13,
+          "sender": "buyer123",
+          "content": "gdf",
+          "timestamp": "2025-03-21T06:04:53.009Z"
+        }
+      ]
+    }
+  ]
+}

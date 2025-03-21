@@ -276,6 +276,13 @@
           "content": "Can you help me with the staking process?",
           "timestamp": "2023-06-10T11:18:00Z",
           "status": "read"
+        },
+        {
+          "id": 30,
+          "sender": "buyer123",
+          "content": "yo",
+          "timestamp": "2025-03-21T08:30:28.413Z",
+          "status": "sent"
         }
       ]
     },

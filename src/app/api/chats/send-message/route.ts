@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getChats, saveChats } from "@/lib/utils";
+import { addMessageToChat, findOrCreateUser } from "@/lib/db/utils";
 
 export async function POST(request: Request) {
   try {
@@ -13,77 +13,67 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await getChats();
-    const chatIndex = data.chats.findIndex((c: any) => c.id === Number(chatId));
-
-    if (chatIndex === -1) {
-      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
-    }
-
-    const chat = data.chats[chatIndex];
-    
-    // Verify sender is part of this chat
-    if (chat.user1 !== sender && chat.user2 !== sender) {
+    // Find user in database
+    const user = await findOrCreateUser(sender);
+    if (!user) {
       return NextResponse.json(
-        { error: "User is not a participant in this chat" },
-        { status: 403 }
+        { error: "User not found" },
+        { status: 404 }
       );
     }
 
-    // Generate new message ID
-    const messageId = chat.messages.length > 0 
-      ? Math.max(...chat.messages.map((m: any) => m.id)) + 1 
-      : 1;
-
-    // Create the new message
-    const newMessage = {
-      id: messageId,
-      sender,
-      content,
-      timestamp: new Date().toISOString(),
-      status: "sent"
-    };
-
-    // Add file info if this is a file message
+    // Prepare file data if this is a file message
+    let fileData;
     if (isFile) {
-      Object.assign(newMessage, {
-        isFile,
-        fileType,
-        fileName,
-        fileSize
-      });
+      fileData = {
+        fileType: fileType || "unknown",
+        fileName: fileName || "file",
+        fileSize: fileSize || "1 KB"
+      };
     }
 
-    // Add message to chat
-    chat.messages.push(newMessage);
-    
-    // Update the chat in the data
-    data.chats[chatIndex] = chat;
-    
-    // Save updated data
-    await saveChats(data);
+    // Add message to chat in database
+    try {
+      const newMessage = await addMessageToChat(
+        Number(chatId),
+        user.id,
+        content,
+        Boolean(isFile),
+        isFile ? fileData : undefined
+      );
 
-    // Format timestamp for response
-    const date = new Date(newMessage.timestamp);
-    const formattedTime = date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+      // Format timestamp for response
+      const date = new Date(newMessage.timestamp);
+      const formattedTime = date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
 
-    // Return the newly created message in the format expected by the frontend
-    return NextResponse.json({
-      id: `m${newMessage.id}`,
-      sender: "me", // Always "me" from sender's perspective
-      content: newMessage.content,
-      timestamp: formattedTime,
-      status: "sent",
-      ...(isFile && {
-        isFile,
-        fileType,
-        fileName,
-        fileSize
-      })
-    }, { status: 201 });
+      // Return the newly created message in the format expected by the frontend
+      return NextResponse.json({
+        message: {
+          id: newMessage.id.toString(),
+          sender: "me", // Always "me" from sender's perspective
+          content: newMessage.content,
+          timestamp: formattedTime,
+          status: newMessage.status || "sent",
+          ...(isFile && {
+            isFile,
+            fileType: newMessage.fileType || fileType,
+            fileName: newMessage.fileName || fileName,
+            fileSize: newMessage.fileSize || fileSize
+          })
+        }
+      }, { status: 201 });
+    } catch (err) {
+      if (err instanceof Error && err.message === "User is not a participant in this chat") {
+        return NextResponse.json(
+          { error: err.message },
+          { status: 403 }
+        );
+      }
+      throw err;
+    }
   } catch (error) {
     console.error("Error sending message:", error);
     return NextResponse.json(

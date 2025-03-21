@@ -1,21 +1,37 @@
 import { defineConfig } from "drizzle-kit";
-import { env } from "./src/lib/env";
-import { parse } from "pg-connection-string";
+import * as dotenv from "dotenv";
+import fs from "fs";
 
-// Parse the connection string into components
-const dbConfig = parse(env.DATABASE_URL);
+// Load .env.development.local file directly
+const envPath = ".env.development.local";
+let databaseUrl = "";
+
+try {
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const match = envContent.match(/DATABASE_URL=([^\n]+)/);
+    if (match && match[1]) {
+      databaseUrl = match[1];
+    }
+  }
+} catch (error) {
+  console.error("Error reading .env file:", error);
+}
+
+// Fallback to dotenv if direct read fails
+if (!databaseUrl) {
+  dotenv.config({ path: envPath });
+  databaseUrl = process.env.DATABASE_URL || "";
+}
+
+console.log("Using database URL:", databaseUrl);
 
 export default defineConfig({
   schema: "./src/lib/db/schema.ts",
-  out: "./src/lib/db/migrations",
+  out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    host: dbConfig.host || "localhost",
-    user: dbConfig.user || "postgres",
-    password: dbConfig.password || "postgres",
-    database: dbConfig.database || "chat_app",
-    port: dbConfig.port ? parseInt(dbConfig.port) : 5432,
-    ssl: !!dbConfig.ssl
+    url: databaseUrl,
   },
   verbose: true,
   strict: true,

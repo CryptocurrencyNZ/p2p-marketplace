@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import { Pool } from '@neondatabase/serverless';
 import postgres from "postgres";
 import * as schema from "./schema";
 import { env } from "@/lib/env";
@@ -8,23 +7,18 @@ import { env } from "@/lib/env";
 // Connection string in format: postgres://user:password@host:port/database
 const connectionString = env.DATABASE_URL;
 
-// Determine if we're in a serverless environment (Vercel Edge or serverless functions)
-const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION;
-
-let db;
-let sql;
-
-if (isServerless) {
-  // For serverless environments (Vercel Edge, AWS Lambda)
-  const pool = new Pool({ connectionString });
-  // @ts-ignore - Known type issue with drizzle-orm and Neon serverless
-  db = drizzle(pool, { schema });
-  sql = pool;
-} else {
-  // For local development or dedicated servers
-  const client = postgres(connectionString, { prepare: false });
-  db = drizzle(client, { schema });
-  sql = postgres(connectionString, { prepare: false });
+// Log the connection string (without credentials)
+try {
+  const url = new URL(connectionString);
+  url.password = "********";
+  console.log("Database connection URL:", url.toString());
+} catch (error) {
+  console.error("Invalid database connection string");
 }
 
-export { db, sql }; 
+// For use in server environments (edge: true = Vercel Edge Functions)
+const client = postgres(connectionString, { prepare: false });
+export const db = drizzle(client, { schema });
+
+// Creating a clean client without drizzle for raw SQL if needed
+export const sql = postgres(connectionString, { prepare: false }); 

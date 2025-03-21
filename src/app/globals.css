@@ -3,6 +3,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -41,6 +43,50 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+@theme {
+  /* Primary gray palette with dark neutral grays */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+  --color-gray-950: #0a0a0a;
+  
+  /* Your existing green accent colors */
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  
+  /* Background colors using the new gray palette */
+  --color-background-primary: var(--color-gray-900);
+  --color-background-secondary: var(--color-gray-800);
+  --color-background-tertiary: var(--color-gray-700);
+  
+  /* Card and border colors */
+  --color-card-background: rgba(38, 38, 38, 0.7); /* gray-800 with opacity */
+  --color-border-primary: var(--color-gray-700);
+  --color-border-secondary: var(--color-gray-800);
+  
+  /* Text colors */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: var(--color-gray-300);
+  --color-text-tertiary: var(--color-gray-400);
+  
+  /* Accent colors */
+  --color-accent-primary: var(--color-green-500);
+  --color-accent-secondary: var(--color-green-400);
+  
+  /* Shadow effects */
+  --shadow-green-glow: 0 0 15px rgba(34, 197, 94, 0.3);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 :root {

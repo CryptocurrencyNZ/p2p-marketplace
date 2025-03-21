@@ -9,8 +9,9 @@ import Navbar from "@/components/NavBar";
 import P2PCryptoTradeMap from "@/components/Map/map";
 import Background from "@/components/AnimatedBackground";
 import { Menu, X } from 'lucide-react';
+import Protected from "@/lib/auth/protected";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 const metadata: Metadata = {
   title: 'Crypto P2P Marketplace',
@@ -57,6 +58,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <Protected>
       <body className={`${inter.className} bg-gray-900 text-white min-h-screen overflow-x-hidden`}>
         <Background />
         
@@ -147,6 +149,7 @@ export default function RootLayout({
           />
         )}
       </body>
+      </Protected>
     </html>
   );
 }

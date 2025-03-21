@@ -95,11 +95,11 @@ export default function LoginPage() {
           )}
           
           <div className="grid gap-4">
-            <button 
-              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
-              onClick={handleDiscordLogin}
-              disabled={isLoading.discord}
-            >
+          <button 
+  className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
+  onClick={handleDiscordLogin}
+  disabled={isLoading.discord}
+>
               {isLoading.discord ? (
                 <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-green-400 animate-spin" />
               ) : (
@@ -111,7 +111,7 @@ export default function LoginPage() {
             </button>
             
             <button 
-              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
+              className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
               onClick={handleGithubLogin}
               disabled={isLoading.github}
             >

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 // components/wallet-button.tsx
-import { useState, useEffect } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useState, useEffect } from "react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function WalletButton() {
   // State to handle client-side only rendering
@@ -45,8 +45,8 @@ export default function WalletButton() {
             return (
               <div
                 {...(!mounted && {
-                  'aria-hidden': true,
-                  'className': 'opacity-0 pointer-events-none user-select-none',
+                  "aria-hidden": true,
+                  className: "opacity-0 pointer-events-none user-select-none",
                 })}
               >
                 {(() => {
@@ -84,9 +84,8 @@ export default function WalletButton() {
                         {chain.hasIcon && (
                           <div className="w-5 h-5 rounded-full overflow-hidden">
                             {chain.iconUrl && (
-                              // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                alt={chain.name ?? 'Chain icon'}
+                                alt={chain.name ?? "Chain icon"}
                                 src={chain.iconUrl}
                                 className="w-5 h-5"
                               />

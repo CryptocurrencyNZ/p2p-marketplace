@@ -13,6 +13,7 @@
     "db:seed": "tsx src/lib/db/seed.ts"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.8.0",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-slot": "^1.1.2",
     "@rainbow-me/rainbowkit": "^2.2.4",
@@ -23,7 +24,7 @@
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.40.1",
+    "drizzle-orm": "^0.41.0",
     "framer-motion": "^12.5.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.483.0",
@@ -54,9 +55,11 @@
     "@types/react-dom": "^19",
     "@types/ws": "^8.5.10",
     "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "^0.30.5",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "tsx": "^4.19.3",
     "typescript": "^5"
   }

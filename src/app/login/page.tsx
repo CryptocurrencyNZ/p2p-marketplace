@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       setIsLoading((prev) => ({ ...prev, discord: true }));
       setAuthError(null);
-      await signIn("discord", { redirectTo: "/dashboard" });
+      await signIn("discord", { redirectTo: "/login/onboarding" });
     } catch (error) {
       setAuthError("Failed to authenticate with Discord. Please try again.");
     } finally {
@@ -34,7 +34,7 @@ export default function LoginPage() {
     try {
       setIsLoading((prev) => ({ ...prev, github: true }));
       setAuthError(null);
-      await signIn("github", { redirectTo: "/dashboard" });
+      await signIn("github", { redirectTo: "/login/onboarding" });
     } catch (error) {
       setAuthError("Failed to authenticate with GitHub. Please try again.");
     } finally {

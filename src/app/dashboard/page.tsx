@@ -1,6 +1,6 @@
 "use client";
 
-import P2PCryptoTradeMap from "@/components/Listings/listing";
+import P2PCryptoTradeMap from "@/components/Map/map";
 import { motion } from "framer-motion";
 
 const Page = () => {

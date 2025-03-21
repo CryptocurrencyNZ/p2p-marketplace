@@ -1,28 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-
-// Type definitions for our trade listings
-interface TradeLocation {
-  lat: number;
-  lng: number;
-}
-
-interface TradeListing {
-  id: string;
-  title: string;
-  location: TradeLocation;
-  price: number;
-  currency: string;
-  cryptoType: string;
-  trader: {
-    name: string;
-    rating: number;
-    completedTrades: number;
-  };
-  description: string;
-  createdAt: string;
-}
+import { TradeListing, TradeLocation } from "./types";
+import ListingsPanel from "./listingPanel";
 
 interface P2PCryptoTradeMapProps {
   className?: string;
@@ -274,21 +254,37 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
     });
   };
 
-  // Filter listings (could add filtering functionality later)
-  const filteredListings = listings;
-
   // This effect will resize the map when the view mode changes
   useEffect(() => {
     if (mapObject && viewMode === "map") {
       // Small delay to allow DOM to update
       setTimeout(() => {
         mapObject.resize();
-      }, 200); // Increased timeout for more reliable resizing
+      }, 200);
     }
   }, [viewMode, mapObject]);
 
+  // Handle listing selection
+  const handleListingSelect = (listing: TradeListing) => {
+    setSelectedListing(listing);
+
+    // Fly to the location on the map
+    if (mapObject) {
+      mapObject.flyTo({
+        center: [listing.location.lng, listing.location.lat],
+        zoom: 12,
+        essential: true,
+      });
+    }
+
+    // On mobile, switch to map view after selecting
+    if (isMobile) {
+      setViewMode("map");
+    }
+  };
+
   return (
-    <div className={`${className} relative`}>
+    <div className={`${className} ml-0 md:ml-32 w-full max-w-6xl px-4 py-6`}>
       {/* Mobile View Toggle */}
       {isMobile && (
         <div className="bg-gray-800 rounded-lg p-2 mb-2 flex">
@@ -302,14 +298,14 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
             className={`flex-1 py-2 px-4 rounded-lg ${viewMode === "listings" ? "bg-blue-600 text-white" : "text-gray-300"}`}
             onClick={() => setViewMode("listings")}
           >
-            Listings ({filteredListings.length})
+            Listings ({listings.length})
           </button>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="flex flex-col md:flex-row md:h-[600px]">
-        {/* Map Section - Improved mobile handling */}
+      <div className="flex flex-col md:flex-row md:h-[600px] shadow-xl rounded-lg overflow-hidden">
+        {/* Map Section */}
         <div
           className={`
             ${
@@ -318,7 +314,7 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
                   ? "block h-[50vh] min-h-[400px]"
                   : "hidden"
                 : "flex-grow h-full"
-            } relative bg-gray-900 rounded-lg shadow-xl overflow-hidden
+            } relative bg-gray-900 overflow-hidden
           `}
           style={{ display: isMobile && viewMode !== "map" ? "none" : "block" }}
         >
@@ -332,98 +328,17 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
           </div>
         </div>
 
-        {/* Listings Panel - Different behavior on mobile vs desktop */}
-        <div
-          className={`
-            ${
-              isMobile
-                ? viewMode === "listings"
-                  ? "block h-[50vh] min-h-[400px]"
-                  : "hidden"
-                : "w-80 h-full bg-gray-800 border-l border-gray-700 shadow-xl ml-2"
-            } bg-gray-800 rounded-lg overflow-hidden
-          `}
-        >
-          <div className="flex flex-col h-full">
-            {!isMobile && (
-              <div className="p-4 border-b border-gray-700">
-                <h2 className="text-xl font-bold text-white">
-                  P2P Crypto Trade Listings
-                </h2>
-                <p className="text-gray-400 text-sm">
-                  Showing {filteredListings.length} available trades
-                </p>
-              </div>
-            )}
-
-            <div className="flex-grow overflow-y-auto">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-white">Loading listings...</div>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-700">
-                  {filteredListings.map((listing) => (
-                    <div
-                      key={listing.id}
-                      className={`p-4 hover:bg-gray-700 cursor-pointer transition-colors ${selectedListing?.id === listing.id ? "bg-gray-700 border-l-4 border-blue-500" : ""}`}
-                      onClick={() => {
-                        setSelectedListing(listing);
-
-                        // Fly to this location on the map
-                        if (mapObject) {
-                          mapObject.flyTo({
-                            center: [
-                              listing.location.lng,
-                              listing.location.lat,
-                            ],
-                            zoom: 12,
-                            essential: true,
-                          });
-                        }
-
-                        // On mobile, switch to map view after selecting
-                        if (isMobile) {
-                          setViewMode("map");
-                        }
-                      }}
-                    >
-                      <div className="flex items-center mb-2">
-                        <div
-                          className="w-6 h-6 rounded-full mr-2"
-                          style={{
-                            backgroundColor: getCryptoColor(listing.cryptoType),
-                          }}
-                        ></div>
-                        <h3 className="font-medium text-white">
-                          {listing.title}
-                        </h3>
-                      </div>
-
-                      <div className="flex justify-between mb-2">
-                        <div className="text-gray-300">
-                          {listing.cryptoType}
-                        </div>
-                        <div className="font-medium text-white">
-                          {listing.price} {listing.currency}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <div className="text-gray-400">
-                          {listing.trader.name} ({listing.trader.rating}★)
-                        </div>
-                        <div className="text-gray-400">
-                          {formatDate(listing.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Listings Panel Component */}
+        <ListingsPanel
+          isLoading={isLoading}
+          listings={listings}
+          selectedListing={selectedListing}
+          onSelectListing={handleListingSelect}
+          isMobile={isMobile}
+          viewMode={viewMode}
+          getCryptoColor={getCryptoColor}
+          formatDate={formatDate}
+        />
       </div>
 
       {/* Selected Listing Detail Popup */}

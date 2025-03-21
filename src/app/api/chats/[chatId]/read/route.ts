@@ -5,12 +5,12 @@ import { chatMessages, ChatParticipant } from "@/lib/db/schema";
 import { and, eq, ne } from "drizzle-orm";
 
 export async function POST(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { chatId: string } }
 ) {
   try {
     const { chatId } = params;
-    const { userId } = await request.json();
+    const { userId } = await req.json();
 
     if (!userId) {
       return NextResponse.json(

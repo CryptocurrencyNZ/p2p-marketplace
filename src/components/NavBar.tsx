@@ -32,8 +32,8 @@ export default function Navbar() {
   // Mobile navbar (Instagram-like)
   const mobileNavbar = (
     <div className="fixed bottom-0 left-0 right-0 h-14 bg-gray-900 border-t border-gray-800 flex items-center justify-around z-50 md:hidden">
-      <NavItem href="/map" icon={<MapPin size={20} />} active={isActive('/map')} label="Map" />
-      <NavItem href="/messages" icon={<MessageCircle size={20} />} active={isActive('/messages')} label="Messages" />
+      <NavItem href="/dashboard/map" icon={<MapPin size={20} />} active={isActive('/map')} label="Map" />
+      <NavItem href="/dashboard/messages" icon={<MessageCircle size={20} />} active={isActive('/messages')} label="Messages" />
       
       {/* Create listing button (centered, highlighted) */}
       <NavItem 
@@ -47,8 +47,8 @@ export default function Navbar() {
         label="Create"
       />
       
-      <NavItem href="/activity" icon={<Bell size={20} />} active={isActive('/activity')} label="Activity" />
-      <NavItem href="/profile" icon={<User size={20} />} active={isActive('/profile')} label="Profile" />
+      <NavItem href="/dashboard/activity" icon={<Bell size={20} />} active={isActive('/activity')} label="Activity" />
+      <NavItem href="/dashboard/profile" icon={<User size={20} />} active={isActive('/profile')} label="Profile" />
     </div>
   );
   
@@ -68,28 +68,28 @@ export default function Navbar() {
           <div className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-green-500/0 via-green-500/70 to-green-500/0 blur-sm"></div>
         </div>
         <span className="hidden xl:block text-xl font-bold bg-gradient-to-r from-white to-gray-300 text-transparent bg-clip-text">
-          CryptoApp
+         CNZ P2P
         </span>
       </div>
       
       {/* Nav items */}
       <div className="flex flex-col flex-1 pt-6 space-y-2">
         <NavItem 
-          href="/map" 
+          href="/dashboard/map" 
           icon={<MapPin size={24} />} 
           active={isActive('/map')} 
           label="Map" 
           sidebar 
         />
         <NavItem 
-          href="/messages" 
+          href="/dashboard/messages" 
           icon={<MessageCircle size={24} />} 
           active={isActive('/messages')} 
           label="Messages" 
           sidebar 
         />
         <NavItem 
-          href="/create" 
+          href="/dashboard/create" 
           icon={<Plus size={24} />} 
           active={isActive('/create')} 
           label="Create Listing" 
@@ -97,14 +97,14 @@ export default function Navbar() {
           highlight 
         />
         <NavItem 
-          href="/activity" 
+          href="/dashboard/activity" 
           icon={<Bell size={24} />} 
           active={isActive('/activity')} 
           label="Activity" 
           sidebar 
         />
         <NavItem 
-          href="/profile" 
+          href="/dashboard/profile" 
           icon={<User size={24} />} 
           active={isActive('/profile')} 
           label="Profile" 
@@ -114,7 +114,7 @@ export default function Navbar() {
       
       {/* Additional options at bottom */}
       <div className="border-t border-gray-800 py-4 px-3 xl:px-6">
-        <Link href="/settings" className={`
+        <Link href="/dashboard/settings" className={`
           flex items-center xl:px-3 py-3 rounded-lg
           ${isActive('/settings') 
             ? 'bg-gray-800/80 text-green-400' 

@@ -84,7 +84,6 @@ export default function WalletButton() {
                         {chain.hasIcon && (
                           <div className="w-5 h-5 rounded-full overflow-hidden">
                             {chain.iconUrl && (
-                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 alt={chain.name ?? 'Chain icon'}
                                 src={chain.iconUrl}

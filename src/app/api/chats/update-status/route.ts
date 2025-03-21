@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getChats, saveChats } from "@/lib/utils";
+import { updateMessageStatus } from "@/lib/db/utils";
 
 export async function POST(request: Request) {
   try {
     const { chatId, messageId, status } = await request.json();
 
-    if (!chatId || !messageId || !status) {
+    if (!messageId || !status) {
       return NextResponse.json(
-        { error: "Missing chatId, messageId, or status" },
+        { error: "Missing messageId or status" },
         { status: 400 }
       );
     }
@@ -21,28 +21,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await getChats();
-    const chat = data.chats.find((c: any) => c.id === Number(chatId));
-
-    if (!chat) {
-      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
-    }
-
-    // Find the message and update its status
-    const message = chat.messages.find((m: any) => m.id === Number(messageId));
+    // Update message status in database
+    // Note: messageId might come with 'm' prefix from frontend
+    const messageIdNumber = messageId.toString().startsWith('m') 
+      ? Number(messageId.toString().substring(1)) 
+      : Number(messageId);
     
-    if (!message) {
+    const updatedMessage = await updateMessageStatus(
+      messageIdNumber, 
+      status
+    );
+
+    if (!updatedMessage) {
       return NextResponse.json({ error: "Message not found" }, { status: 404 });
     }
 
-    message.status = status;
-    await saveChats(data);
-
     return NextResponse.json({ 
       success: true,
-      message: message
+      message: {
+        id: `m${updatedMessage.id}`,
+        status: updatedMessage.status,
+        chatId: updatedMessage.chatId
+      }
     }, { status: 200 });
   } catch (error) {
+    console.error("Error in update message status endpoint:", error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }

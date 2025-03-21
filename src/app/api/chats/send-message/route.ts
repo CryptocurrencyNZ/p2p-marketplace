@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { getChats, saveChats } from "@/lib/utils";
+import { addMessageToChat, findOrCreateUser, getChatById } from "@/lib/db/utils";
 
 export async function POST(request: Request) {
   try {
-    const { chatId, sender, content } = await request.json();
+    const body = await request.json();
+    const { chatId, sender, content, isFile, fileType, fileName, fileSize } = body;
 
     if (!chatId || !sender || !content) {
       return NextResponse.json(
@@ -12,33 +13,44 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await getChats();
-    const chat = data.chats.find((c: any) => c.id === Number(chatId));
+    // Get the user
+    const user = await findOrCreateUser(sender);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
+    // Check if chat exists
+    const chat = await getChatById(Number(chatId));
     if (!chat) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    const newMessage = {
-      id: chat.messages.length + 1,
-      sender,
+    // Create new message in database
+    const newMessage = await addMessageToChat(
+      Number(chatId), 
+      user.id, 
       content,
-      timestamp: new Date().toISOString(),
-      status: "sent" // Initial status is "sent"
+      isFile || false,
+      isFile ? { fileType, fileName, fileSize } : undefined
+    );
+
+    // Format message for frontend display
+    const formattedMessage = {
+      id: `m${newMessage.id}`,
+      sender: "me", // It's always "me" for the sender
+      content: newMessage.content,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: newMessage.status,
+      ...(isFile && { isFile, fileType, fileName, fileSize })
     };
 
-    chat.messages.push(newMessage);
-    await saveChats(data);
-
-    // In a real app with websockets, we would broadcast this message to other users
-    // After 1 second, we would update the status to "delivered"
-    // After the recipient reads it, we would update to "read"
-
     return NextResponse.json({ 
-      message: newMessage,
+      message: formattedMessage,
+      originalMessage: newMessage,
       success: true 
     }, { status: 201 });
   } catch (error) {
+    console.error("Error in send message endpoint:", error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }

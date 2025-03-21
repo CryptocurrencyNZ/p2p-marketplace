@@ -6,8 +6,9 @@ export async function GET(request: Request) {
     // Get query parameters
     const url = new URL(request.url);
     const chatId = url.searchParams.get("chatId");
-    const limit = Number(url.searchParams.get("limit") || "20");
+    const limit = Number(url.searchParams.get("limit") || "50");
     const before = url.searchParams.get("before"); // Message ID to fetch messages before
+    const currentUserId = url.searchParams.get("userId") || "buyer123"; // Current user ID
     
     if (!chatId) {
       return NextResponse.json(
@@ -29,7 +30,9 @@ export async function GET(request: Request) {
     
     // Apply pagination
     if (before) {
-      const beforeMessageIndex = messages.findIndex((m: any) => m.id === Number(before));
+      // Remove 'm' prefix from message ID if present
+      const messageId = before.startsWith('m') ? Number(before.substring(1)) : Number(before);
+      const beforeMessageIndex = messages.findIndex((m: any) => m.id === messageId);
       if (beforeMessageIndex !== -1) {
         messages = messages.slice(0, beforeMessageIndex);
       }
@@ -38,14 +41,33 @@ export async function GET(request: Request) {
     // Get the most recent messages up to the limit
     messages = messages.slice(-limit);
     
-    // Add status to messages if not present
-    messages = messages.map((msg: any) => ({
-      ...msg,
-      status: msg.status || "delivered",
-    }));
+    // Format messages for frontend display
+    const formattedMessages = messages.map((msg: any) => {
+      // Format timestamp from ISO to AM/PM format
+      const date = new Date(msg.timestamp);
+      const formattedTime = date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+
+      // Create formatted message object
+      return {
+        id: `m${msg.id}`,
+        sender: msg.sender === currentUserId ? "me" : "them",
+        content: msg.content,
+        timestamp: formattedTime,
+        status: msg.status || "delivered",
+        ...(msg.isFile && {
+          isFile: true,
+          fileType: msg.fileType || "pdf",
+          fileName: msg.fileName || "document.pdf",
+          fileSize: msg.fileSize || "1.2 MB"
+        })
+      };
+    });
 
     return NextResponse.json({ 
-      messages,
+      messages: formattedMessages,
       hasMore: messages.length >= limit
     }, { status: 200 });
   } catch (error) {

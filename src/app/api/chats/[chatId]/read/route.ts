@@ -4,18 +4,12 @@ import { db } from "@/lib/db";
 import { chatMessages, ChatParticipant } from "@/lib/db/schema";
 import { and, eq, ne } from "drizzle-orm";
 
-type RouteParams = {
-  params: {
-    chatId: string;
-  };
-};
-
 export async function POST(
   request: NextRequest,
-  context: RouteParams
+  { params }: { params: { chatId: string } }
 ) {
   try {
-    const { chatId } = context.params;
+    const { chatId } = params;
     const { userId } = await request.json();
 
     if (!userId) {

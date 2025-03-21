@@ -325,7 +325,6 @@ export default function ProfilePage() {
                     onChange={(e) => {
                       if (e.target.files?.[0]) {
                         // Handle file upload in a real app
-                        console.log("File selected:", e.target.files[0]);
                       }
                     }}
                   />
@@ -403,7 +402,6 @@ export default function ProfilePage() {
               <button
                 onClick={() => {
                   // In a real app, you would save changes to the backend here
-                  console.log("Profile updated:", editedProfile);
                   setIsEditModalOpen(false);
                   // Show a success message or toast notification
                 }}

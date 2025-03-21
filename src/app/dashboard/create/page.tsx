@@ -105,7 +105,6 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       createdAt: new Date(),
     };
     
-    console.log('New listing:', listing);
     // Here you would typically send this to your API
   };
 

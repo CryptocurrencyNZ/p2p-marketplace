@@ -45,7 +45,6 @@ export default function ChatPage() {
         }),
       });
       const data = await response.json();
-      console.log("Message sent:", data);
       
       // Clear the input and refresh messages
       setMessage("");

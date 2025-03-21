@@ -7,15 +7,6 @@ import { env } from "@/lib/env";
 // Connection string in format: postgres://user:password@host:port/database
 const connectionString = env.DATABASE_URL;
 
-// Log the connection string (without credentials)
-try {
-  const url = new URL(connectionString);
-  url.password = "********";
-  console.log("Database connection URL:", url.toString());
-} catch (error) {
-  console.error("Invalid database connection string");
-}
-
 // For use in server environments (edge: true = Vercel Edge Functions)
 const client = postgres(connectionString, { prepare: false });
 export const db = drizzle(client, { schema });

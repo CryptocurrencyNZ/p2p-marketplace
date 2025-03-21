@@ -25,8 +25,6 @@ if (!databaseUrl) {
   databaseUrl = process.env.DATABASE_URL || "";
 }
 
-console.log("Using database URL:", databaseUrl);
-
 export default defineConfig({
   schema: "./src/lib/db/schema.ts",
   out: "./drizzle",

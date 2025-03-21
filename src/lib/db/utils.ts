@@ -4,23 +4,17 @@ import { and, eq, or } from "drizzle-orm";
 
 // Get a chat by ID with all its messages
 export async function getChatById(chatId: number) {
-  console.log(`Getting chat by ID: ${chatId}`);
-  
   try {
     // First get the basic chat
     const chatResult = await db.select().from(chats).where(eq(chats.id, chatId));
     
     if (!chatResult || chatResult.length === 0) {
-      console.log(`No chat found with ID ${chatId}`);
       return null;
     }
-    
-    console.log(`Chat found:`, chatResult[0]);
     
     // Get messages
     const messagesResult = await db.select().from(chatMessages).where(eq(chatMessages.chatId, chatId))
       .orderBy(chatMessages.timestamp);
-    console.log(`Found ${messagesResult.length} messages for chat ${chatId}`);
     
     // Get participants
     const participantsResult = await db.select({
@@ -31,8 +25,6 @@ export async function getChatById(chatId: number) {
     .from(chatParticipants)
     .where(eq(chatParticipants.chatId, chatId))
     .innerJoin(users, eq(chatParticipants.userId, users.id));
-    
-    console.log(`Found ${participantsResult.length} participants for chat ${chatId}`);
     
     // Combine the results
     const chat = {
@@ -75,15 +67,10 @@ export async function getChatsByUserId(userId: number) {
 
 // Create a new chat between two users
 export async function createChat(user1Id: number, user2Id: number, initialMessage?: string) {
-  console.log(`Creating chat between users ${user1Id} and ${user2Id}`);
-  
   // Start a transaction
   try {
     return await db.transaction(async (tx) => {
-      console.log("Transaction started");
-      
       // Create the chat
-      console.log("Inserting chat record");
       const newChat = await tx
         .insert(chats)
         .values({
@@ -93,14 +80,11 @@ export async function createChat(user1Id: number, user2Id: number, initialMessag
         })
         .returning();
         
-      console.log("Chat created:", newChat);
-      
       if (!newChat || newChat.length === 0) {
         throw new Error("Failed to create chat record");
       }
       
       // Add participants
-      console.log(`Adding participants: ${user1Id}, ${user2Id} to chat ${newChat[0].id}`);
       await tx.insert(chatParticipants).values([
         { chatId: newChat[0].id, userId: user1Id },
         { chatId: newChat[0].id, userId: user2Id },
@@ -108,7 +92,6 @@ export async function createChat(user1Id: number, user2Id: number, initialMessag
 
       // Add initial message if provided
       if (initialMessage) {
-        console.log(`Adding initial message to chat ${newChat[0].id}`);
         await tx.insert(chatMessages).values({
           chatId: newChat[0].id,
           senderId: user1Id,
@@ -118,9 +101,7 @@ export async function createChat(user1Id: number, user2Id: number, initialMessag
       }
 
       // Return the new chat with participants
-      console.log(`Fetching complete chat data for ${newChat[0].id}`);
       const completeChat = await getChatById(newChat[0].id);
-      console.log("Complete chat retrieved:", completeChat ? "success" : "failed");
       return completeChat;
     });
   } catch (error) {

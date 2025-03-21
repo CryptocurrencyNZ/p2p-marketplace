@@ -232,7 +232,7 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({ className = '' })
     
     // Initialize map when component mounts
     initializeMap();
-  }, []);
+  }, [isMobile]);
   
   // Helper function to get color based on crypto type
   const getCryptoColor = (cryptoType: string): string => {

@@ -33,18 +33,10 @@ export default function Navbar() {
   // Mobile navbar (Instagram-like)
   const mobileNavbar = (
     <div className="fixed bottom-0 left-0 right-0 h-14 bg-gray-900 border-t border-gray-800 flex items-center justify-around z-50 md:hidden">
-      <NavItem 
-        href="/dashboard/map" 
-        icon={<MapPin size={20} />} 
-        active={isActive('/dashboard/map')} 
-        label="Map" 
-      />
-      <NavItem 
-        href="/dashboard/messages" 
-        icon={<MessageCircle size={20} />} 
-        active={isActive('/dashboard/messages')} 
-        label="Messages" 
-      />    
+
+      <NavItem href="/dashboard/" icon={<MapPin size={20} />} active={isActive('/map')} label="Map" />
+      <NavItem href="/dashboard/messages" icon={<MessageCircle size={20} />} active={isActive('/messages')} label="Messages" />    
+
       {/* Create listing button (centered, highlighted) */}
       <NavItem
         href="/dashboard/create"
@@ -57,6 +49,7 @@ export default function Navbar() {
         label="Create"
       />
       
+
       <NavItem 
         href="/dashboard/activity" 
         icon={<Bell size={20} />} 
@@ -69,6 +62,7 @@ export default function Navbar() {
         active={isActive('/dashboard')} 
         label="Profile" 
       />
+
     </div>
   );
 
@@ -95,10 +89,11 @@ export default function Navbar() {
       {/* Nav items */}
       <div className="flex flex-col flex-1 pt-6 space-y-2">
         <NavItem 
-          href="/dashboard/map" 
+          href="/dashboard/" 
           icon={<MapPin size={24} />} 
-          active={isActive('/dashboard/map')} 
-          label="Map" 
+          active={isActive('/dashboard')} 
+          label="P2P Listings" 
+
           sidebar 
         />
         <NavItem 
@@ -124,7 +119,7 @@ export default function Navbar() {
           sidebar 
         />
         <NavItem 
-          href="/dashboard" 
+          href="/dashboard/profile" 
           icon={<User size={24} />} 
           active={isActive('/dashboard')} 
           label="Profile" 

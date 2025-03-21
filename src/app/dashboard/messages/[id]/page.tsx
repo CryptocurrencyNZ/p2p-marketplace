@@ -19,8 +19,15 @@ import {
   FileText
 } from 'lucide-react';
 
-// Simulating a route with dynamic parameter
-const ChatRoom = ({ chatId = '1' }) => {
+type MessagePageParams = {
+  params: {
+    id: string; // This should match your [id] folder name
+  };
+};
+
+// Then use this type in your page component
+export default function MessagePage({ params }: MessagePageParams) {
+  const { id: chatId } = params;
   // References
   const messageInputRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -123,9 +130,6 @@ const handleSendMessage = (e: React.FormEvent) => {
     
     setMessages([...messages, newMessage]);
     setMessage('');
-    
-    // Focus back on input after sending
-    const messageInputRef = useRef<HTMLInputElement>(null);
     
     // Simulate message sending status updates
     setTimeout(() => {
@@ -367,5 +371,3 @@ const renderMessageStatus = (status: string) => {
     </div>
   );
 };
-
-export default ChatRoom;

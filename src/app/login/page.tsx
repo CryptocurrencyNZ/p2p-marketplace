@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { signIn } from "next-auth/react";
 import { Github, AlertCircle, Monitor, Smartphone } from "lucide-react";
@@ -13,7 +12,6 @@ const WalletButton = dynamic(() => import("@/components/wallet-button"), {
 });
 
 export default function LoginPage() {
-  const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState({
     discord: false,
@@ -94,7 +92,7 @@ export default function LoginPage() {
 
           <div className="grid gap-4">
             <button
-              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
+              className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
               onClick={handleDiscordLogin}
               disabled={isLoading.discord}
             >
@@ -118,7 +116,7 @@ export default function LoginPage() {
             </button>
 
             <button
-              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
+              className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white hover:text-green-300 hover:border-green-500/50 transition-all p-2.5 rounded-md w-full"
               onClick={handleGithubLogin}
               disabled={isLoading.github}
             >

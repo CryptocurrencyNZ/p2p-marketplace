@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getChats, saveChats } from "@/lib/utils";
 
-export async function POST(
-  request: Request,
-  { params }: { params: { chatId: string } }
-) {
+export async function POST(request: Request) {
   try {
-    const { chatId } = params;
+    // Extract chatId from URL path segments
+    const pathParts = request.url.split('/');
+    const chatId = pathParts[pathParts.indexOf('chats') + 1];
+    
     const body = await request.json();
     const { userId, starred } = body;
 

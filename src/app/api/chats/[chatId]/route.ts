@@ -13,12 +13,11 @@ interface ChatWithRelations {
   messages: ChatMessage[];
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: { chatId: string } }
-) {
+export async function GET(request: Request) {
   try {
-    const { chatId } = params;
+    // Extract chatId from URL path segments
+    const chatId = request.url.split('/').filter(Boolean).pop() || '';
+    
     // Get current user from query param (will be replaced with auth in production)
     const url = new URL(request.url);
     const currentUserName = url.searchParams.get("userId") || "buyer123";

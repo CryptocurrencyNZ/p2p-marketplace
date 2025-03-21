@@ -4,13 +4,11 @@ import { db } from "@/lib/db";
 import { chatMessages, ChatParticipant } from "@/lib/db/schema";
 import { and, eq, ne } from "drizzle-orm";
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { chatId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const { chatId } = params;
-    const { userId } = await req.json();
+    // Extract chatId from URL path segments
+    const chatId = request.nextUrl.pathname.split('/')[3];
+    const { userId } = await request.json();
 
     if (!userId) {
       return NextResponse.json(

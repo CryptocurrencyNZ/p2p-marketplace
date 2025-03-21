@@ -227,7 +227,6 @@ const ChatRoom = () => {
 
   // Render message status icon
   const renderMessageStatus = (status: string) => {
-  const renderMessageStatus = (status: string) => {
     switch (status) {
       case 'sending':
         return <Clock size={14} className="text-gray-500" />;
@@ -474,4 +473,4 @@ const ChatRoom = () => {
   );
 };
 
-export default Page;
+export default ChatRoom;

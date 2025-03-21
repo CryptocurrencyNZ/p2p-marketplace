@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { findOrCreateUser, getChatById } from "@/lib/db/utils";
 import { db } from "@/lib/db";
 import { chatMessages, ChatParticipant } from "@/lib/db/schema";
 import { and, eq, ne } from "drizzle-orm";
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { chatId: string } }
 ) {
   try {

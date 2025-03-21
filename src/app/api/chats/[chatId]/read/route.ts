@@ -6,10 +6,10 @@ import { and, eq, ne } from "drizzle-orm";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  context: { params: { chatId: string } }
 ) {
   try {
-    const { chatId } = params;
+    const { chatId } = context.params;
     const { userId } = await request.json();
 
     if (!userId) {
@@ -66,4 +66,4 @@ export async function POST(
       { status: 500 }
     );
   }
-} 
+}

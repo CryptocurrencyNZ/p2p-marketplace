@@ -65,6 +65,7 @@ const ChatRoom = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
+  const messageIdsRef = useRef<Set<string>>(new Set());
 
   // Fetch chat data from API
   useEffect(() => {
@@ -89,6 +90,9 @@ const ChatRoom = () => {
           setLastMessageTimestamp(data.messages[data.messages.length - 1].timestamp);
         }
         
+        // Update our messageIds ref with the initial message IDs
+        messageIdsRef.current = new Set(data.messages?.map((m: Message) => m.id) || []);
+        
         setError(null);
       } catch (err) {
         console.error("Error fetching chat data:", err);
@@ -106,21 +110,18 @@ const ChatRoom = () => {
   // Set up polling for new messages
   useEffect(() => {
     if (!chatId || loading) return;
-
+    
     const pollNewMessages = async () => {
       try {
         // Construct URL with query parameter for messages since the last one
         let url = `/api/chats/${chatId}`;
+        
+        // Only add the since parameter if we have messages
         if (messages.length > 0) {
-          // Use the last message's createdAt (server timestamp) if available
-          // The API expects a timestamp to filter with
-          // In a real implementation, you would need to ensure the timestamp format matches what the server expects
-          const lastMsg = messages[messages.length - 1];
-          
-          // Here we're assuming the timestamp is convertible to a Date
-          // In a real implementation, you might need to handle this differently based on your API
-          const lastDate = new Date().toISOString();
-          url += `?since=${encodeURIComponent(lastDate)}`;
+          // Convert the last received message's timestamp to a date object
+          // In a production app, you'd store and use the server's timestamp format
+          const lastMessageTime = new Date(Date.now() - 10000); // 10 seconds ago as a safety buffer
+          url += `?since=${encodeURIComponent(lastMessageTime.toISOString())}`;
         }
         
         const response = await fetch(url);
@@ -133,23 +134,30 @@ const ChatRoom = () => {
         
         // Only update if there are new messages
         if (data.messages && data.messages.length > 0) {
-          // Create a set of existing message IDs for quick lookup
-          const existingIds = new Set(messages.map(m => m.id));
+          // Get current message IDs
+          const currentMessageIds = messageIdsRef.current;
           
-          // Filter out any messages we already have
-          const newMessages = data.messages.filter((msg: Message) => !existingIds.has(msg.id));
+          // Filter out messages we already have by ID
+          const newMessages = data.messages.filter((msg: Message) => !currentMessageIds.has(msg.id));
           
           if (newMessages.length > 0) {
-            // Append new messages to the existing ones
-            setMessages(prev => [...prev, ...newMessages]);
+            // Update state with new messages
+            setMessages(prevMessages => {
+              // Create a new array with all existing messages plus new ones
+              const updatedMessages = [...prevMessages, ...newMessages];
+              
+              // Update the ref with new message IDs
+              newMessages.forEach((msg: Message) => currentMessageIds.add(msg.id));
+              
+              return updatedMessages;
+            });
             
-            // Update chat data if needed
+            // Update chat data
             setCurrentChat(data);
           }
         }
       } catch (err) {
         console.error("Error polling for new messages:", err);
-        // Don't set error state here to avoid disrupting the user experience
       }
     };
 
@@ -158,7 +166,7 @@ const ChatRoom = () => {
     
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
-  }, [chatId, loading]); // Remove 'messages' from the dependency array to prevent too frequent re-renders
+  }, [chatId, loading, messages.length]); // Add messages.length as dependency to get fresh message IDs
 
   // Auto scroll to bottom when new messages arrive or on initial load
   useEffect(() => {

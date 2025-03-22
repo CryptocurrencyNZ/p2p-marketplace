@@ -1,18 +1,18 @@
 "use client";
 
-import P2PCryptoTradeMap from "@/components/Map/map";
+import P2PCryptoTradeContainer from "@/components/Map/container";
 import { motion } from "framer-motion";
 
 const Page = () => {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 md:px-8">
+    <div className="w-full h-screen overflow-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.2, duration: 0.6 }}
-        className="w-full mb-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="w-full h-full"
       >
-        <P2PCryptoTradeMap />
+        <P2PCryptoTradeContainer />
       </motion.div>
     </div>
   );

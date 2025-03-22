@@ -117,8 +117,8 @@ export const listings = pgTable("listings", {
   price: numeric("price").notNull(),
   isBuy: boolean("is_buy").notNull(),
   currency: text("currency").notNull(),
-  crypto_type: text("crypto_type").notNull(),
   descrption: text("descrption").notNull(),
+  onChainProof: boolean("on_chain_proof").notNull(),
 });
 
 export const elo = pgTable("userElo", {

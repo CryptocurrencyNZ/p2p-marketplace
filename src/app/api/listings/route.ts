@@ -18,8 +18,8 @@ export const GET = async () => {
         price: listings.price,
         isBuy: listings.isBuy,
         currency: listings.currency,
-        cryptoType: listings.crypto_type,
         description: listings.descrption,
+        onChainProof: listings.onChainProof,
       })
       .from(listings)
       .innerJoin(userProfile, eq(userProfile.auth_id, listings.user_auth_id));
@@ -39,6 +39,7 @@ const AddListingInput = z.object({
   currency: z.string(),
   crypto_type: z.string(),
   descrption: z.string(),
+  onChainProof: z.boolean(),
 });
 
 export const POST = async (request: Request) => {

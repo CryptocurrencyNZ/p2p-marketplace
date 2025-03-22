@@ -8,6 +8,20 @@
       "when": 1742612897217,
       "tag": "0000_handy_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742618510915,
+      "tag": "0001_watery_nightcrawler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1742618765272,
+      "tag": "0002_green_silver_fox",
+      "breakpoints": true
     }
   ]
 }

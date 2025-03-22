@@ -5,16 +5,53 @@ import { NextResponse } from "next/server";
 import { convertRepToStar } from "@/lib/rep_system/repConversions";
 import { fetchUserElo } from "@/lib/rep_system/updateRep";
 
-// Define types for the price data
-interface PriceData {
+// Properly typed dictionaries with index signatures
+interface PriceMap {
   [key: string]: number;
-  nzd: number;
 }
+
+interface IdMap {
+  [key: string]: string;
+}
+
+// Fallback prices and rate (used if all APIs fail)
+const FALLBACK_PRICES: PriceMap = {
+  'btc': 82000,
+  'eth': 5000,
+  'bnb': 650,
+  'xrp': 1.50,
+  'ada': 1.20,
+  'sol': 180,
+  'doge': 0.20,
+  'dot': 25,
+  'ltc': 120,
+  'link': 40,
+  'usdt': 1,
+  'usdc': 1,
+};
+
+const FALLBACK_NZD_RATE = 1.65;
+
+// Common currency symbol mapping to CoinCap API IDs
+const SYMBOL_TO_ID: IdMap = {
+  'btc': 'bitcoin',
+  'eth': 'ethereum',
+  'bnb': 'binance-coin',
+  'xrp': 'xrp',
+  'ada': 'cardano',
+  'sol': 'solana',
+  'doge': 'dogecoin',
+  'dot': 'polkadot',
+  'ltc': 'litecoin',
+  'link': 'chainlink',
+  'usdt': 'tether',
+  'usdc': 'usd-coin',
+};
 
 // Update the DbListing interface to match what's actually returned from the database
 interface DbListing {
   id: string;
-  userId: string | null; // Changed to allow null, matching the database structure
+  userId: string | null;
   username: string;
   createdAt: Date | null;
   title: string;
@@ -37,59 +74,200 @@ interface EnhancedListing extends Omit<DbListing, 'price' | 'marginRate'> {
   calculatedMarginRate: number;
 }
 
-// Function to fetch cryptocurrency price data
-const fetchCryptoPriceData = async (currency: string): Promise<PriceData> => {
+/**
+ * Gets crypto price from CoinCap API (free, higher rate limits)
+ */
+const getCryptoPriceFromCoinCap = async (currency: string): Promise<number | null> => {
   try {
-    // Create a proper absolute URL for server-side API route calls
-    const baseUrl = "https://p2p-marketplace-sigma.vercel.app";
+    const symbol = currency.toLowerCase();
     
-    // Make sure the URL is absolute with proper protocol
-    const apiUrl = new URL(`/api/crypto-price?currency=${currency.toLowerCase()}`, baseUrl);
-    
-    // Use the absolute URL for the fetch call
-    const response = await fetch(apiUrl.toString());
-    
-    console.log(`Fetching price data from: ${apiUrl.toString()}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch price data');
+    // Get the proper ID for this coin
+    let coinId: string;
+    if (symbol in SYMBOL_TO_ID) {
+      coinId = SYMBOL_TO_ID[symbol];
+      console.log(`Mapped ${symbol} to ${coinId} for CoinCap API`);
+    } else {
+      coinId = symbol;
+      console.log(`No mapping found for ${symbol}, using as is for CoinCap API`);
     }
     
-    const priceData: PriceData = await response.json();
-    return priceData;
+    console.log(`Fetching from CoinCap API: ${coinId}`);
+    const response = await fetch(`https://api.coincap.io/v2/assets/${coinId}`, {
+      headers: {
+        'Accept': 'application/json'
+      },
+      next: { revalidate: 300 } // Cache for 5 minutes
+    });
+    
+    if (!response.ok) {
+      console.error(`CoinCap API error: ${response.status} for ${coinId}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.data && typeof data.data.priceUsd === 'string') {
+      const price = parseFloat(data.data.priceUsd);
+      if (!isNaN(price)) {
+        console.log(`CoinCap price for ${currency}: $${price}`);
+        return price;
+      }
+    }
+    
+    console.error(`Invalid data format from CoinCap for ${currency}`);
+    return null;
   } catch (error) {
-    console.error('Error fetching price data:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to fetch price data');
+    console.error(`Error fetching ${currency} from CoinCap:`, error);
+    return null;
   }
 };
 
-// Function to calculate NZ value based on price and currency
+/**
+ * Gets crypto price from Binance API (free, high rate limits)
+ */
+const getCryptoPriceFromBinance = async (currency: string): Promise<number | null> => {
+  try {
+    // Binance uses specific trading pairs
+    const symbol = currency.toUpperCase() + 'USDT';
+    
+    console.log(`Fetching from Binance API: ${symbol}`);
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`, {
+      headers: {
+        'Accept': 'application/json'
+      },
+      next: { revalidate: 300 } // Cache for 5 minutes
+    });
+    
+    if (!response.ok) {
+      console.error(`Binance API error: ${response.status} for ${symbol}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data && typeof data.price === 'string') {
+      const price = parseFloat(data.price);
+      if (!isNaN(price)) {
+        console.log(`Binance price for ${currency}: $${price}`);
+        return price;
+      }
+    }
+    
+    console.error(`Invalid data format from Binance for ${currency}`);
+    return null;
+  } catch (error) {
+    console.error(`Error fetching ${currency} from Binance:`, error);
+    return null;
+  }
+};
+
+/**
+ * Gets NZD exchange rate
+ */
+const getNZDExchangeRate = async (): Promise<number> => {
+  try {
+    // Try ExchangeRate-API first
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+      headers: { 'Accept': 'application/json' },
+      next: { revalidate: 3600 } // Cache for 1 hour
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.rates && typeof data.rates.NZD === 'number') {
+        console.log(`Got NZD rate: ${data.rates.NZD}`);
+        return data.rates.NZD;
+      }
+    }
+    
+    // Fallback to hardcoded rate
+    console.log(`Using fallback NZD rate: ${FALLBACK_NZD_RATE}`);
+    return FALLBACK_NZD_RATE;
+  } catch (error) {
+    console.error('Error fetching exchange rate:', error);
+    console.log(`Using fallback NZD rate: ${FALLBACK_NZD_RATE}`);
+    return FALLBACK_NZD_RATE;
+  }
+};
+
+/**
+ * Get crypto price in USD using multiple APIs with fallbacks
+ */
+const getCryptoPrice = async (currency: string): Promise<number | null> => {
+  // If currency is NZD, return 1 (1 NZD = 1 NZD)
+  if (currency.toUpperCase() === 'NZD') {
+    return 1;
+  }
+  
+  const symbol = currency.toLowerCase();
+  
+  // Try CoinCap API first
+  const coincapPrice = await getCryptoPriceFromCoinCap(currency);
+  if (coincapPrice !== null) {
+    return coincapPrice;
+  }
+  
+  // Try Binance API as fallback
+  const binancePrice = await getCryptoPriceFromBinance(currency);
+  if (binancePrice !== null) {
+    return binancePrice;
+  }
+  
+  // Use our hardcoded fallback prices if available
+  if (symbol in FALLBACK_PRICES) {
+    const fallbackPrice = FALLBACK_PRICES[symbol];
+    console.log(`Using fallback price for ${currency}: $${fallbackPrice}`);
+    return fallbackPrice;
+  }
+  
+  // If all else fails, return null
+  console.error(`Could not get price for ${currency} from any source`);
+  return null;
+};
+
+/**
+ * Calculate NZ value based on price and currency
+ */
 const calculateNZValue = async (priceStr: string, currency: string): Promise<number | null> => {
   try {
     // Convert price string to number
     const price = parseFloat(priceStr);
     if (isNaN(price)) {
-      throw new Error('Invalid price format');
+      console.log(`Invalid price format: ${priceStr}`);
+      return null;
     }
     
     // If the currency is already NZD, return the price directly
     if (currency.toUpperCase() === 'NZD') {
       return price;
     }
-    // Fetch the latest price data for the currency
-    const priceData = await fetchCryptoPriceData(currency);
+    
+    console.log(`Calculating NZD value for ${price} ${currency}`);
+    
+    // Get USD price
+    const usdPrice = await getCryptoPrice(currency);
+    if (usdPrice === null) {
+      console.error(`Failed to get USD price for ${currency}`);
+      return null;
+    }
+    
+    // Get NZD exchange rate
+    const nzdRate = await getNZDExchangeRate();
     
     // Calculate NZD value
-    if (priceData && priceData.price_nzd !== undefined) {
-      console.log(`Using conversion rate: 1 ${currency} = ${priceData.price_nzd} NZD`);
-      return price * priceData.price_nzd;
-    } else {
-      throw new Error('NZD conversion rate not available');
+    const nzdValue = price * usdPrice * nzdRate;
+    console.log(`Calculated: ${price} ${currency} = $${nzdValue} NZD (${price} x $${usdPrice} USD x ${nzdRate} NZD/USD rate)`);
+    
+    // Validate result
+    if (isNaN(nzdValue)) {
+      console.error('NaN value calculated', { price, usdPrice, nzdRate });
+      return null;
     }
+    
+    return nzdValue;
   } catch (error) {
     console.error('Error calculating NZ value:', error);
-    return null; // Return null if calculation fails
+    return null;
   }
 };
 
@@ -126,9 +304,6 @@ export const GET = async () => {
           
           // Handle invalid price formats
           if (isNaN(priceAsFloat)) {
-            console.error(`Invalid price format for listing ${listing.id}: "${listing.price}"`);
-            
-            // Return listing with default/fallback values for invalid price
             return {
               ...listing,
               price: 0,
@@ -139,23 +314,8 @@ export const GET = async () => {
             } as EnhancedListing;
           }
           
-          // Calculate NZ value with additional error handling
-          let nzValue = null;
-          try {
-            nzValue = await calculateNZValue(listing.price, listing.currency);
-            
-            // Extra validation to ensure nzValue is not NaN
-            if (nzValue !== null && isNaN(nzValue)) {
-              console.error(`NaN nzValue calculated for listing ${listing.id}`, {
-                price: listing.price,
-                currency: listing.currency
-              });
-              nzValue = null;
-            }
-          } catch (calcError) {
-            console.error(`Error calculating NZ value for listing ${listing.id}:`, calcError);
-            nzValue = null;
-          }
+          // Calculate NZ value
+          const nzValue = await calculateNZValue(listing.price, listing.currency);
           
           // Calculate margin rate with validation
           let calculatedMarginRate = 0;
@@ -172,7 +332,7 @@ export const GET = async () => {
             price: priceAsInteger,
             userRep,
             starRating,
-            nzValue, // This might be null if calculation failed
+            nzValue,
             calculatedMarginRate
           } as EnhancedListing;
         } catch (error) {

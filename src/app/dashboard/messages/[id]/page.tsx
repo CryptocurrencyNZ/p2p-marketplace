@@ -161,8 +161,8 @@ const ChatRoom = () => {
       }
     };
 
-    // Start polling every 5 seconds
-    const intervalId = setInterval(pollNewMessages, 5000);
+    // Start polling every 3 seconds
+    const intervalId = setInterval(pollNewMessages, 3000);
     
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);

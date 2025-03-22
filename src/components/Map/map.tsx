@@ -187,7 +187,7 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
               </div>
             </div>
 
-            <button style="width: 100%; font-size:1.2rem; background: linear-gradient(to right, #22c55e, #16a34a); color: white; padding: 8px 0; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
+            <button id="contact-trader-${listing.id}" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg" style="width: 100%; font-size:1.2rem; background: linear-gradient(to right, #22c55e, #16a34a); color: white; padding: 8px 0; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
               Contact Trader
             </button>
           </div>
@@ -216,14 +216,48 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
       `;
       document.head.appendChild(styleTag);
 
-      // Add event listener to close button after popup is added to DOM
+      // Add event listener to close button and contact button after popup is added to DOM
       popup.on('open', () => {
         // Use a small timeout to ensure the DOM is updated
         setTimeout(() => {
+          // Add close button event listener
           const closeButton = document.getElementById(`popup-close-${listing.id}`);
           if (closeButton) {
             closeButton.addEventListener('click', () => {
               popup.remove();
+            });
+          }
+          
+          // Add contact trader button event listener
+          const contactButton = document.getElementById(`contact-trader-${listing.id}`);
+          if (contactButton) {
+            contactButton.addEventListener('click', async () => {
+              console.log(listing.id)
+              try {
+                const response = await fetch('/api/trade-sessions', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    listingId: listing.id,
+                    vendorId: listing.trader.id,
+                    onChain: false,
+                  }),
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Failed to create trade session');
+                }
+                
+                const data = await response.json();
+                // Navigate to the chat page
+                window.location.href = `/dashboard/messages/${data.id}`;
+              } catch (error) {
+                console.error('Error creating trade session:', error);
+                // You might want to show an error message to the user here
+              }
             });
           }
         }, 10);

@@ -1,5 +1,6 @@
 import Navbar from "@/components/NavBar";
 import Protected from "@/lib/auth/protected";
+import { SessionProvider } from "next-auth/react";
 
 export default function RootLayout({
   children,
@@ -11,7 +12,9 @@ export default function RootLayout({
       <div className="flex min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
         <Navbar />
         <main className="flex-1 pb-14 md:pb-0 w-full">
+          <SessionProvider>
           {children}
+          </SessionProvider>
         </main>
       </div>
     </Protected>

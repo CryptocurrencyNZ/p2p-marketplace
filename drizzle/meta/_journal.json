@@ -22,6 +22,20 @@
       "when": 1742633781687,
       "tag": "0002_slippery_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1742641739641,
+      "tag": "0003_calm_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1742641755613,
+      "tag": "0004_bright_argent",
+      "breakpoints": true
     }
   ]
 }

@@ -140,6 +140,7 @@ export const listings = pgTable("listings", {
   currency: text("currency").notNull(),
   descrption: text("descrption").notNull(),
   onChainProof: boolean("on_chain_proof").notNull(),
+  isComplete: boolean("is_complete").default(false),
 });
 
 export const elo = pgTable("userElo", {

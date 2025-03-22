@@ -24,7 +24,7 @@ async function fetchUserElo(userId: number): Promise<number> {
     return parseInt(elo);
 }
 
-async function updateUserElo(userId: number, newElo: number) {
+export async function updateUserElo(userId: number, newElo: number) {
     const resp = await fetch(`https://p2p-elo-worker.hunekejustus.workers.dev/update?id=${userId}&elo=${newElo}`, { method: "POST" });
 
     if (!resp.ok) {

@@ -6,6 +6,7 @@ import {
   primaryKey,
   integer,
   numeric,
+  unique,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -65,6 +66,40 @@ export const userProfile = pgTable("userProfiles", {
   createdAt: timestamp("created_at").defaultNow(),
   bio: text("bio"),
   avatar: text("avatar"),
+});
+
+// Chat schema - single table approach
+export const messages = pgTable("messages", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  senderId: text("sender_id")
+    .notNull()
+    .references(() => users.id),
+  receiverId: text("receiver_id")
+    .notNull()
+    .references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  isRead: boolean("is_read").notNull().default(false),
+  conversationID: text("conversation_id"),
+});
+
+// Starred chats table - tracks which users have starred which conversations
+export const starredChats = pgTable("starred_chats", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  conversationId: text("conversation_id").notNull(),
+}, (table) => {
+  return {
+    // Create a unique constraint on userId and conversationId
+    // to prevent duplicate stars from the same user on same conversation
+    userConversationUnique: unique().on(table.userId, table.conversationId),
+  };
 });
 
 export const listings = pgTable("listings", {

@@ -70,15 +70,13 @@ const ChatRoom = () => {
     const fetchChatData = async () => {
       try {
         setLoading(true);
-        // Current user - in production this would come from auth
-        const currentUser = "buyer123"; // Default user for demo
-
-        const response = await fetch(
-          `/api/chats/${chatId}?userId=${currentUser}`,
-        );
+        
+        const response = await fetch(`/api/chats/${chatId}`);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch chat data");
+          throw new Error(response.status === 404 
+            ? "Chat not found" 
+            : "Failed to fetch chat data");
         }
 
         const data = await response.json();
@@ -98,9 +96,16 @@ const ChatRoom = () => {
     }
   }, [chatId]);
 
-  // Auto scroll to bottom when new messages arrive
+  // Auto scroll to bottom when new messages arrive or on initial load
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+    
+    // Use a small timeout to ensure the DOM has updated
+    const timer = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timer);
   }, [messages]);
 
   // Mark messages as read when chat is opened
@@ -109,17 +114,11 @@ const ChatRoom = () => {
       if (!chatId) return;
 
       try {
-        // Current user - in production this would come from auth
-        const currentUser = "buyer123"; // Default user for demo
-
         await fetch(`/api/chats/${chatId}/read`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userId: currentUser,
-          }),
         });
       } catch (err) {
         console.error("Error marking messages as read:", err);
@@ -164,7 +163,6 @@ const ChatRoom = () => {
         },
         body: JSON.stringify({
           chatId,
-          sender: "buyer123", // Current user - in production this would come from auth
           content: newMessage.content,
         }),
       });

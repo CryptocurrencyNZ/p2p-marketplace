@@ -110,6 +110,7 @@ export const fetchMockListings = async (): Promise<TradeListing[]> => {
       const completedTrades = generateCompletedTrades(starRating);
 
       const nzValue = item.nzValue
+      console.log(nzValue)
       
       // Create the transformed listing
       const transformedListing: TradeListing = {

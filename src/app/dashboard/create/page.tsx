@@ -62,15 +62,17 @@ const CreateListingPage = () => {
   // List of popular cryptocurrencies and fiat options
   const currencyOptions: Currency[] = [
     { id: 'btc', name: 'Bitcoin', symbol: 'BTC', type: 'crypto', icon: <Bitcoin size={20} /> },
+    { id: 'ltc', name: 'Litecoin', symbol: 'LTC', type: 'crypto', icon: <DollarSign size={20} /> },
+    { id: 'nzdd', name: 'NZDD', symbol: 'NZDD', type: 'crypto', icon: <DollarSign size={20} /> },
+    { id: 'usdt', name: 'USDT', symbol: 'USDT', type: 'crypto', icon: <DollarSign size={20} /> },
+    { id: 'usdc', name: 'USDC', symbol: 'USDC', type: 'crypto', icon: <DollarSign size={20} /> },
+    { id: 'xmr', name: 'Monero', symbol: 'XMR', type: 'crypto', icon: <DollarSign size={20} /> },
     { id: 'eth', name: 'Ethereum', symbol: 'ETH', type: 'crypto', icon: <DollarSign size={20} /> },
-    { id: 'usdt', name: 'Tether', symbol: 'USDT', type: 'crypto', icon: <DollarSign size={20} /> },
-    { id: 'bnb', name: 'BNB', symbol: 'BNB', type: 'crypto', icon: <DollarSign size={20} /> },
-    { id: 'xrp', name: 'Ripple', symbol: 'XRP', type: 'crypto', icon: <DollarSign size={20} /> },
     { id: 'sol', name: 'Solana', symbol: 'SOL', type: 'crypto', icon: <DollarSign size={20} /> },
-    { id: 'ada', name: 'Cardano', symbol: 'ADA', type: 'crypto', icon: <DollarSign size={20} /> },
-    { id: 'nzd', name: 'New Zealand Dollar', symbol: 'NZD', type: 'fiat', icon: <DollarSign size={20} /> },
+    { id: 'doge', name: 'Dogecoin', symbol: 'DOGE', type: 'crypto', icon: <DollarSign size={20} /> },
+    { id: 'trx', name: 'Tron', symbol: 'TRX', type: 'crypto', icon: <DollarSign size={20} /> },
+    { id: 'bnb', name: 'BNB', symbol: 'BNB', type: 'crypto', icon: <DollarSign size={20} /> },
   ];
-
   // Fetch live price data when currency changes
   useEffect(() => {
     async function fetchPriceData() {

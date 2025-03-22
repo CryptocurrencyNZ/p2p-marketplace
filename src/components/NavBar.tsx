@@ -9,16 +9,28 @@ import { MapPin, MessageCircle, Plus, Bell, User, LogOut, ChevronDown, ChevronUp
 export default function Navbar() {
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
-  const [isOpen, setIsOpen] = useState(false);
+  
+  // State for the two separate popups
+  const [isBibleOpen, setBibleOpen] = useState(false);
+  const [isP2PGuideOpen, setP2PGuideOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("intro");
   
-  const openPopup = (e: React.MouseEvent<HTMLElement>) => {
+  const openBiblePopup = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    setIsOpen(true);
+    setBibleOpen(true);
   };
 
-  const closePopup = () => {
-    setIsOpen(false);
+  const closeBiblePopup = () => {
+    setBibleOpen(false);
+  };
+  
+  const openP2PGuidePopup = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    setP2PGuideOpen(true);
+  };
+
+  const closeP2PGuidePopup = () => {
+    setP2PGuideOpen(false);
   };
 
   // Mobile navbar (Instagram-like)
@@ -63,7 +75,7 @@ export default function Navbar() {
       {/* External link to scam guide */}
       <a
         href="#"
-        onClick={openPopup}
+        onClick={openBiblePopup}
         className="flex items-center justify-center"
       >
         <div className="text-gray-400 hover:text-green-400">
@@ -143,16 +155,29 @@ export default function Navbar() {
           sidebar
         />
 
-        <div className="hidden lg:flex items-center justify-center my-8 w-3/4 m-8">
+        <div className="hidden lg:flex items-center justify-center my-2 w-3/4 m-8">
           <button
-            onClick={openPopup}
-            className="bg-gradient-to-r from-green-600 to-green-500 w-auto rounded-lg px-6 py-3 flex items-center justify-center gap-3 border border-green-400 text-white font-medium shadow-lg hover:from-green-700 hover:to-green-600 transition-all duration-300 transform hover:scale-105"
+            onClick={openBiblePopup}
+            className="bg-gradient-to-r from-gray-800 to-gray-700 w-auto rounded-lg px-6 py-1 flex items-center justify-center gap-3 border border-green-400 text-white font-medium shadow-lg hover:from-green-700 hover:to-green-600 transition-all duration-300 transform hover:scale-105"
             style={{
               boxShadow: "0 0 12px rgba(74, 222, 128, 0.5), 0 0 20px rgba(74, 222, 128, 0.2)",
             }}
           >
             <span className="text-xl">📜</span>
-            <span>View the P2P No-Scam Bible</span>
+            <span>P2P No-Scam Bible</span>
+          </button>
+        </div>
+
+        <div className="hidden lg:flex items-center justify-center my-2 w-3/4 m-8">
+          <button
+            onClick={openP2PGuidePopup}
+            className="bg-gradient-to-r from-gray-800 to-gray-700 w-auto rounded-lg px-6 py-1 flex items-center justify-center gap-3 border border-green-400 text-white font-medium shadow-lg hover:from-green-700 hover:to-green-600 transition-all duration-300 transform hover:scale-105"
+            style={{
+              boxShadow: "0 0 12px rgba(74, 222, 128, 0.5), 0 0 20px rgba(74, 222, 128, 0.2)",
+            }}
+          >
+            <span className="text-xl">📜</span>
+            <span>What is P2P?</span>
           </button>
         </div>
       </div>
@@ -193,8 +218,8 @@ export default function Navbar() {
     </button>
   );
 
-  // Custom P2P Bible Content
-  const popupModal = isOpen && (
+  // P2P Bible Popup Modal
+  const biblePopupModal = isBibleOpen && (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-80 transition-opacity duration-300">
       <div className="relative bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl h-4/5 flex flex-col overflow-hidden border border-green-500">
         {/* Modal Header */}
@@ -207,7 +232,7 @@ export default function Navbar() {
             </div>
           </div>
           <button
-            onClick={closePopup}
+            onClick={closeBiblePopup}
             className="text-gray-400 hover:text-green-400 focus:outline-none p-2"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,12 +257,6 @@ export default function Navbar() {
                 title="15 Commandments" 
                 icon={<Shield size={18} />} 
                 isActive={activeSection === "commandments"} 
-              />
-              <SectionSelector 
-                id="what-is-p2p" 
-                title="What is P2P Trading" 
-                icon={<AlertTriangle size={18} />} 
-                isActive={activeSection === "what-is-p2p"} 
               />
             </div>
           </div>
@@ -382,40 +401,6 @@ export default function Navbar() {
                 </div>
               </div>
             )}
-
-            {activeSection === "what-is-p2p" && (
-              <div className="space-y-6 max-w-3xl mx-auto">
-                <div className="flex items-center justify-center space-x-2 mb-8">
-                  <div className="h-1 bg-green-500 w-16 rounded-full"></div>
-                  <h3 className="text-xl font-bold text-green-400">What is P2P Trading</h3>
-                  <div className="h-1 bg-green-500 w-16 rounded-full"></div>
-                </div>
-                
-                <div className="space-y-4 leading-relaxed">
-                  <p>P2P (peer-to-peer) crypto trading is the act of buying or selling cryptocurrency directly between two traders, without the use of a middleman to facilitate the transaction process.</p>
-                  
-                  <p>A P2P crypto trader is any individual who buys and sells cryptocurrency directly between other crypto users, instead of buying directly through a centralized exchange or retailer.</p>
-                  
-                  <p>P2P is the rawest form of cryptocurrency trading available, providing more control over the trading process at the expense of the security and safety of traditional methods.</p>
-                  
-                  <div className="bg-gray-800 rounded-lg p-5 my-4">
-                    <h4 className="font-bold text-lg text-green-300 mb-3">P2P Glossary</h4>
-                    <ul className="space-y-2">
-                      <li><span className="text-green-400 font-medium">P2P:</span> Peer-to-peer</li>
-                      <li><span className="text-green-400 font-medium">IRL:</span> In real life</li>
-                      <li><span className="text-green-400 font-medium">F2F:</span> Face to face</li>
-                      <li><span className="text-green-400 font-medium">KYC:</span> Know your customer</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="bg-red-900/20 border border-red-800 rounded-lg p-5 my-6">
-                    <h4 className="text-red-400 font-bold text-lg mb-2">WARNING</h4>
-                    <p>P2P is a scam cesspit, you are virtually guaranteed to encounter scammers. It is highly recommended to read the NZ P2P Scam Bible to understand the realities and risks of P2P trading. The most common and safest way to acquire crypto in NZ is through a regulated crypto exchange.</p>
-                    <p className="mt-3 font-medium">P2P is an evolving minefield of scams. Beware, scam is real and P2P is a magnet for it.</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         
@@ -436,13 +421,67 @@ export default function Navbar() {
               <Shield size={16} className="mr-1" />
               <span className="text-sm">Rules</span>
             </button>
-            <button
-              onClick={() => setActiveSection("what-is-p2p")}
-              className={`px-3 py-1.5 rounded-md flex items-center ${activeSection === "what-is-p2p" ? "bg-green-600 text-white" : "text-gray-400"}`}
-            >
-              <AlertTriangle size={16} className="mr-1" />
-              <span className="text-sm">About</span>
-            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // What is P2P Trading Popup Modal
+  const p2pGuidePopupModal = isP2PGuideOpen && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-80 transition-opacity duration-300">
+      <div className="relative bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl h-4/5 flex flex-col overflow-hidden border border-green-500">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-gradient-to-r from-gray-900 to-gray-800">
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">📜</span>
+            <div>
+              <h2 className="text-2xl font-bold text-green-400">What is P2P Trading</h2>
+              <p className="text-gray-400 text-sm">Learn about peer-to-peer cryptocurrency trading</p>
+            </div>
+          </div>
+          <button
+            onClick={closeP2PGuidePopup}
+            className="text-gray-400 hover:text-green-400 focus:outline-none p-2"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto p-6 text-gray-200">
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center justify-center space-x-2 mb-8">
+              <div className="h-1 bg-green-500 w-16 rounded-full"></div>
+              <h3 className="text-xl font-bold text-green-400">What is P2P Trading</h3>
+              <div className="h-1 bg-green-500 w-16 rounded-full"></div>
+            </div>
+            
+            <div className="space-y-4 leading-relaxed">
+              <p>P2P (peer-to-peer) crypto trading is the act of buying or selling cryptocurrency directly between two traders, without the use of a middleman to facilitate the transaction process.</p>
+              
+              <p>A P2P crypto trader is any individual who buys and sells cryptocurrency directly between other crypto users, instead of buying directly through a centralized exchange or retailer.</p>
+              
+              <p>P2P is the rawest form of cryptocurrency trading available, providing more control over the trading process at the expense of the security and safety of traditional methods.</p>
+              
+              <div className="bg-gray-800 rounded-lg p-5 my-4">
+                <h4 className="font-bold text-lg text-green-300 mb-3">P2P Glossary</h4>
+                <ul className="space-y-2">
+                  <li><span className="text-green-400 font-medium">P2P:</span> Peer-to-peer</li>
+                  <li><span className="text-green-400 font-medium">IRL:</span> In real life</li>
+                  <li><span className="text-green-400 font-medium">F2F:</span> Face to face</li>
+                  <li><span className="text-green-400 font-medium">KYC:</span> Know your customer</li>
+                </ul>
+              </div>
+              
+              <div className="bg-red-900/20 border border-red-800 rounded-lg p-5 my-6">
+                <h4 className="text-red-400 font-bold text-lg mb-2">WARNING</h4>
+                <p>P2P is a scam cesspit, you are virtually guaranteed to encounter scammers. It is highly recommended to read the NZ P2P Scam Bible to understand the realities and risks of P2P trading. The most common and safest way to acquire crypto in NZ is through a regulated crypto exchange.</p>
+                <p className="mt-3 font-medium">P2P is an evolving minefield of scams. Beware, scam is real and P2P is a magnet for it.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -453,7 +492,8 @@ export default function Navbar() {
     <>
       {mobileNavbar}
       {desktopSidebar}
-      {popupModal}
+      {biblePopupModal}
+      {p2pGuidePopupModal}
       {/* Content padding - adds margin for the navbar/sidebar */}
       <div className="md:pl-20 xl:pl-64"></div>
     </>
@@ -527,5 +567,4 @@ function NavItem({
         <span className="hidden xl:block ml-4 font-medium">{label}</span>
       </div>
     </Link>
-  );
-}
+  )};

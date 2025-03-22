@@ -400,7 +400,7 @@ const ChatRoom = () => {
 
       {/* Trade status bar */}
       <div className="px-4 py-6">
-        <TradeStatusBar />
+        <TradeStatusBar sessionId={chatId} />
       </div>
 
       {/* Chat Messages */}

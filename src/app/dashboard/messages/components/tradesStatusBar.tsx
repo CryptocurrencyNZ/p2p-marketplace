@@ -3,23 +3,218 @@
 import React, { useState, useEffect } from "react";
 import { X, Check, AlertCircle, DollarSign, Timer, Star, ArrowRight, RotateCcw, Shield, Wallet, Lock, Send, Unlock } from "lucide-react";
 
-const TradeStatusBar = ({ initialStage = "initiate" }) => {
+// Define the type for the session data
+interface TradeSessionData {
+  id: string;
+  vendor_start: boolean;
+  customer_start: boolean;
+  vendor_id: string;
+  customer_id: string;
+  vendor_complete: string | null;
+  customer_complete: string | null;
+  vendor_wallet: string | null;
+  customer_wallet: string | null;
+  stage?: string;
+  // Add other session fields as needed
+}
+
+// Adding TradeDetails interface for the trade information
+interface TradeDetails {
+  amount: string;
+  buyerAddress: string;
+  value: string;
+  currency: string;
+}
+
+interface TradeStatusBarProps {
+  initialStage?: string;
+  sessionId?: string;
+}
+
+const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBarProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState(initialStage);
   const [tradeStatus, setTradeStatus] = useState({
     user: false,
     counterparty: false
   });
+  const [sessionData, setSessionData] = useState<TradeSessionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userRating, setUserRating] = useState(0);
   const [counterpartyRating, setCounterpartyRating] = useState(0);
-  // Add new state for trade details
-  const [tradeDetails, setTradeDetails] = useState({
-    tokenAddress: "",
-    amount: "",
-    buyerAddress: ""
+  const [isVendor, setIsVendor] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  // Add tradeDetails state with default values
+  const [tradeDetails, setTradeDetails] = useState<TradeDetails>({
+    amount: "0.025 BTC",
+    buyerAddress: "0x...",
+    value: "1,250",
+    currency: "NZD"
   });
-  // Add state for wallet connection
-  const [walletConnected, setWalletConnected] = useState(false);
+
+  // Fetch trade session status
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const fetchTradeSessionStatus = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch start status data
+        const response = await fetch(`/api/trade-sessions/start-status?sessionId=${sessionId}`);
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch trade session status");
+        }
+        
+        const data = await response.json();
+        setSessionData(data);
+        
+        // Check if current user is the vendor (seller) or buyer
+        const userSession = await fetch('/api/auth/session');
+        if (userSession.ok) {
+          const userData = await userSession.json();
+          const currentUserId = userData.user?.id;
+          
+          // Determine if current user is vendor or buyer
+          const userIsVendor = data.vendor_id === currentUserId;
+          setIsVendor(userIsVendor);
+          
+          // Update component state based on session data and user role
+          if (userIsVendor) {
+            setTradeStatus(prev => ({
+              ...prev,
+              user: data.vendor_start,
+              counterparty: data.customer_start
+            }));
+            
+            // Set wallet address if available
+            if (data.vendor_wallet) {
+              setWalletAddress(data.vendor_wallet);
+            }
+          } else {
+            setTradeStatus(prev => ({
+              ...prev,
+              user: data.customer_start,
+              counterparty: data.vendor_start
+            }));
+            
+            // Set wallet address if available
+            if (data.customer_wallet) {
+              setWalletAddress(data.customer_wallet);
+            }
+          }
+          
+          // Set current stage from data if available
+          if (data.stage) {
+            setCurrentStage(data.stage);
+          }
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching trade session status:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Initial fetch
+    fetchTradeSessionStatus();
+    
+    // Set up polling for status updates
+    const intervalId = setInterval(fetchTradeSessionStatus, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [sessionId]);
+
+  // Update the start status API
+  const updateTradeSessionStatus = async (status: boolean) => {
+    if (!sessionId) return;
+    
+    try {
+      const response = await fetch('/api/trade-sessions/start-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          status,
+          userRole: isVendor ? 'vendor' : 'buyer'
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update trade session status");
+      }
+      
+      const data = await response.json();
+      setSessionData(data[0]); // Update with the returned data
+      
+    } catch (err) {
+      console.error("Error updating trade session status:", err);
+    }
+  };
+  
+  // Update the complete status API
+  const updateCompleteStatus = async (status: "-1" | "0" | "1") => {
+    if (!sessionId) return;
+    
+    try {
+      const response = await fetch('/api/trade-sessions/complete-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          status
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update complete status");
+      }
+      
+      const data = await response.json();
+      setSessionData(data[0]);
+      
+    } catch (err) {
+      console.error("Error updating complete status:", err);
+    }
+  };
+  
+  // Update the wallet status API
+  const updateWalletStatus = async (wallet: string) => {
+    if (!sessionId || !wallet.trim()) return;
+    
+    try {
+      const response = await fetch('/api/trade-sessions/wallet-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          wallet
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update wallet status");
+      }
+      
+      const data = await response.json();
+      setSessionData(data[0]);
+      setWalletAddress(wallet);
+      
+    } catch (err) {
+      console.error("Error updating wallet status:", err);
+    }
+  };
 
   // Update stage when prop changes
   useEffect(() => {
@@ -31,55 +226,121 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
   
   // Toggle user's acceptance status
   const toggleUserStatus = () => {
+    const newStatus = !tradeStatus.user;
     setTradeStatus(prev => ({
       ...prev,
-      user: !prev.user
+      user: newStatus
     }));
+    updateTradeSessionStatus(newStatus);
   };
   
   // Toggle counterparty's acceptance status
-  const toggleCounterpartyStatus = () => {
+  const toggleCounterpartyStatus = async () => {
+    const newStatus = !tradeStatus.counterparty;
     setTradeStatus(prev => ({
       ...prev,
-      counterparty: !prev.counterparty
+      counterparty: newStatus
     }));
+    
+    // This is just for UI representation, the actual counterparty status 
+    // would be set by the counterparty themselves via their own session
   };
 
-  // Mock function to connect wallet
-  const connectWallet = () => {
-    setWalletConnected(true);
+  // Function to advance to next stage - now interacts with backend
+  const proceedToNextStage = async (nextStage: string) => {
+    try {
+      // Different API calls based on the stage transition
+      if (currentStage === "initiate" && nextStage === "confirm_details") {
+        // Call start-status API to officially start the trade
+        await fetch('/api/trade-sessions/start-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            status: true,
+            userRole: isVendor ? 'vendor' : 'buyer',
+            stage: nextStage
+          }),
+        });
+      } 
+      else if (nextStage === "fiat_sent") {
+        // If buyer confirms sending payment
+        if (!isVendor) {
+          await updateCompleteStatus("1");
+        }
+      }
+      else if (nextStage === "release_funds") {
+        // If buyer confirms sending payment
+        if (!isVendor) {
+          await updateCompleteStatus("1");
+        }
+      }
+      else if (nextStage === "completed") {
+        // If seller confirms receiving payment
+        if (isVendor) {
+          await updateCompleteStatus("1");
+        }
+      }
+      else if (nextStage === "cancelled") {
+        // For cancellations
+        await updateCompleteStatus("-1");
+      }
+      
+      // Update the stage in the DB and locally
+      await fetch('/api/trade-sessions/start-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          status: true, // Keep current status
+          userRole: isVendor ? 'vendor' : 'buyer',
+          stage: nextStage
+        }),
+      });
+      
+      // Update the UI
+      setCurrentStage(nextStage);
+      closeModal();
+    } catch (err) {
+      console.error(`Error transitioning to stage ${nextStage}:`, err);
+    }
   };
 
-  // Handle trade detail input changes
-  const handleTradeDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setTradeDetails(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Handler for wallet address input
+  const handleWalletAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setWalletAddress(event.target.value);
+  };
+  
+  // Save wallet address
+  const saveWalletAddress = async () => {
+    await updateWalletStatus(walletAddress);
   };
 
-  // Mock function to advance to next stage - in production this would interact with your backend
-  const proceedToNextStage = (nextStage: string) => {
-    setCurrentStage(nextStage);
-    closeModal();
-  };
-
-  // Determine the status bar text based on current stage
+  // Determine the status bar text based on current stage and roles
   const getStatusBarText = () => {
     switch(currentStage) {
       case "initiate":
-        return tradeStatus.user && tradeStatus.counterparty 
-          ? "Trade Initiated - Both Parties Accepted" 
-          : "Awaiting Trade Acceptance";
-      case "connect_wallet":
-        return "Pending: Seller to Connect Wallet";
-      case "lock_funds":
-        return "Pending: Seller to Lock Funds";
+        if (isVendor) {
+          return tradeStatus.user && tradeStatus.counterparty 
+            ? "Trade Initiated - Both Parties Accepted" 
+            : "Awaiting Buyer Acceptance";
+        } else {
+          return tradeStatus.user && tradeStatus.counterparty 
+            ? "Trade Initiated - Both Parties Accepted" 
+            : "Awaiting Seller Acceptance";
+        }
+      case "confirm_details":
+        return isVendor 
+          ? "Waiting: Buyer to Confirm Trade Details" 
+          : "Buyer: Confirm Trade Details";
       case "fiat_sent":
-        return "Pending: Buyer to Confirm Fiat Payment Sent";
+        return isVendor 
+          ? "Waiting: Buyer to Send Payment" 
+          : "Pending: Confirm Fiat Payment Sent";
       case "release_funds":
-        return "Pending: Seller to Release Funds";
+        return isVendor 
+          ? "Pending: Confirm Payment Received" 
+          : "Waiting: Seller to Confirm Payment";
       case "completed":
         return "Trade Completed Successfully";
       case "cancelled":
@@ -91,6 +352,16 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
     }
   };
 
+  // Get role-specific label for the status display
+  const getRoleLabel = () => {
+    return isVendor ? "(Seller)" : "(Buyer)";
+  };
+
+  // Get counterparty role label for the status display
+  const getCounterpartyRoleLabel = () => {
+    return isVendor ? "(Buyer)" : "(Seller)";
+  };
+
   // Determine status color based on current stage
   const getStatusColor = () => {
     switch(currentStage) {
@@ -98,8 +369,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return tradeStatus.user && tradeStatus.counterparty 
           ? "bg-green-500/20 border-green-500/50 text-green-400"
           : "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
-      case "connect_wallet":
-      case "lock_funds":
+      case "confirm_details":
       case "fiat_sent":
       case "release_funds":
         return "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
@@ -121,10 +391,8 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return tradeStatus.user && tradeStatus.counterparty 
           ? <Check size={18} className="text-green-400" />
           : <AlertCircle size={18} className="text-yellow-400" />;
-      case "connect_wallet":
+      case "confirm_details":
         return <Wallet size={18} className="text-yellow-400" />;
-      case "lock_funds":
-        return <Lock size={18} className="text-yellow-400" />;
       case "fiat_sent":
         return <DollarSign size={18} className="text-yellow-400" />;
       case "release_funds":
@@ -179,7 +447,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-white">Your Acceptance</h4>
+                  <h4 className="font-medium text-white">Your Acceptance {getRoleLabel()}</h4>
                   <p className="text-sm text-gray-400">Do you accept the terms of this trade?</p>
                 </div>
                 <button 
@@ -193,26 +461,43 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   {tradeStatus.user ? "Accepted" : "Accept"}
                 </button>
               </div>
+              
+              {/* Display status from API if session data is loaded */}
+              {sessionData && (
+                <div className="mt-2 text-xs text-gray-400">
+                  Status: {isVendor 
+                    ? sessionData.vendor_start ? "Accepted" : "Not Accepted"
+                    : sessionData.customer_start ? "Accepted" : "Not Accepted"
+                  } by you {getRoleLabel()}
+                </div>
+              )}
             </div>
             
             {/* Counterparty acceptance */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-white">Counterparty Acceptance</h4>
-                  <p className="text-sm text-gray-400">Has the other party accepted the trade?</p>
+                  <h4 className="font-medium text-white">Counterparty Acceptance {getCounterpartyRoleLabel()}</h4>
+                  <p className="text-sm text-gray-400">{isVendor ? "Buyer" : "Seller"} status:</p>
                 </div>
-                <button 
-                  onClick={toggleCounterpartyStatus}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                <div 
+                  className={`px-4 py-2 rounded-lg font-medium ${
                     tradeStatus.counterparty 
                       ? "bg-green-500/20 border border-green-500/50 text-green-400" 
-                      : "bg-gray-700 border border-gray-600 text-gray-400 hover:bg-gray-600"
+                      : "bg-yellow-500/20 border-yellow-500/50 text-yellow-400"
                   }`}
                 >
-                  {tradeStatus.counterparty ? "Accepted" : "Accept"}
-                </button>
+                  {tradeStatus.counterparty ? "Accepted" : "Waiting"}
+                </div>
               </div>
+              {sessionData && (
+                <div className="mt-2 text-xs text-gray-400">
+                  Status: {isVendor 
+                    ? sessionData.customer_start ? "Accepted" : "Not Accepted"
+                    : sessionData.vendor_start ? "Accepted" : "Not Accepted"
+                  } by counterparty {getCounterpartyRoleLabel()}
+                </div>
+              )}
             </div>
             
             {/* Current status and action button */}
@@ -224,12 +509,12 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
               }`}>
                 {tradeStatus.user && tradeStatus.counterparty 
                   ? "Both parties have accepted - Ready to proceed" 
-                  : "Waiting for acceptance from both parties"}
+                  : `Waiting for acceptance from ${!tradeStatus.user ? "you" : isVendor ? "buyer" : "seller"}`}
               </div>
               
               {tradeStatus.user && tradeStatus.counterparty && (
                 <button 
-                  onClick={() => proceedToNextStage("connect_wallet")}
+                  onClick={() => proceedToNextStage("confirm_details")}
                   className="w-full bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
                 >
                   Proceed to Next Step
@@ -239,11 +524,14 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
           </div>
         );
 
-      case "connect_wallet":
+      case "confirm_details":
+        // Only buyers should see this stage with active options
         return (
           <div className="p-4 space-y-4">
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Connect Wallet (Seller)</h4>
+              <h4 className="font-medium text-white mb-2">
+                Trade Details {isVendor ? "(Waiting for Buyer)" : "(Buyer Confirmation)"}
+              </h4>
               
               <div className="p-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <p className="text-sm text-center text-blue-400">
@@ -252,95 +540,77 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                 </p>
               </div>
               
-              <p className="text-sm text-gray-300 mb-4">As the seller, you need to connect your wallet to lock the cryptocurrency in escrow.</p>
-              
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => proceedToNextStage("cancelled")}
-                  className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
-                >
-                  Cancel Trade
-                </button>
-                <button 
-                  onClick={() => {
-                    connectWallet();
-                    proceedToNextStage("lock_funds");
-                  }}
-                  className="w-1/2 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium rounded-lg shadow-[0_0_10px_rgba(59,130,246,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-200"
-                >
-                  Connect Wallet
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "lock_funds":
-        return (
-          <div className="p-4 space-y-4">
-            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Lock Funds in Escrow (Seller)</h4>
-              
-              <div className="p-3 mb-4 rounded-lg bg-green-500/10 border border-green-500/30">
-                <p className="text-sm text-center text-green-400">
-                  <Lock className="inline mr-1" size={16} />
-                  Wallet Connected: {walletConnected ? "Yes" : "No"}
-                </p>
-              </div>
-              
-              <div className="space-y-3 mb-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Token Address</label>
-                  <input 
-                    type="text" 
-                    name="tokenAddress"
-                    value={tradeDetails.tokenAddress}
-                    onChange={handleTradeDetailChange}
-                    placeholder="0x..."
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
-                  />
+              {/* Wallet Address Input - Buyer needs to provide their wallet to receive crypto */}
+              {!isVendor && (
+                <div className="mb-4">
+                  <label className="block text-sm text-gray-400 mb-1">Your Wallet Address (to receive crypto)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={walletAddress}
+                      onChange={handleWalletAddressChange}
+                      placeholder="Enter your wallet address"
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+                    />
+                    <button 
+                      onClick={saveWalletAddress}
+                      className="bg-green-500/20 border border-green-500/50 text-green-400 px-3 py-1 rounded-md text-sm font-medium hover:bg-green-500/30"
+                    >
+                      Save
+                    </button>
+                  </div>
+                  {sessionData?.customer_wallet && (
+                    <p className="text-xs text-green-400 mt-1">Wallet address saved!</p>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Amount</label>
-                  <input 
-                    type="text" 
-                    name="amount"
-                    value={tradeDetails.amount}
-                    onChange={handleTradeDetailChange}
-                    placeholder="0.0"
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Buyer's Address</label>
-                  <input 
-                    type="text" 
-                    name="buyerAddress"
-                    value={tradeDetails.buyerAddress}
-                    onChange={handleTradeDetailChange}
-                    placeholder="0x..."
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
-                  />
-                </div>
-              </div>
+              )}
               
-              <p className="text-sm text-gray-300 mb-4">Please enter the details above and lock your funds in the escrow contract.</p>
+              {/* Seller sees buyer's wallet address if provided */}
+              {isVendor && sessionData?.customer_wallet && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-400">Buyer's Wallet Address:</p>
+                  <p className="text-sm text-white font-mono bg-gray-700/50 p-2 rounded-md mt-1 break-all">
+                    {sessionData.customer_wallet}
+                  </p>
+                </div>
+              )}
               
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => proceedToNextStage("cancelled")}
-                  className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => proceedToNextStage("fiat_sent")}
-                  className="w-1/2 bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
-                  disabled={!tradeDetails.tokenAddress || !tradeDetails.amount || !tradeDetails.buyerAddress}
-                >
-                  Lock Funds
-                </button>
-              </div>
+              <p className="text-sm text-gray-300 mb-4">
+                {isVendor 
+                 ? "Waiting for buyer to confirm trade details." 
+                 : "Please carefully review the trade details above before proceeding."}
+              </p>
+              
+              {!isVendor && (
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => proceedToNextStage("cancelled")}
+                    className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
+                  >
+                    Cancel Trade
+                  </button>
+                  <button 
+                    onClick={() => proceedToNextStage("fiat_sent")}
+                    disabled={!walletAddress.trim()}
+                    className={`w-1/2 font-medium rounded-lg px-4 py-2 transition-all duration-200 ${
+                      !walletAddress.trim()
+                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-green-600 to-green-500 text-gray-900 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                    }`}
+                  >
+                    Confirm Details
+                  </button>
+                </div>
+              )}
+              
+              {isVendor && (
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-center">
+                  <p className="text-sm text-blue-400">
+                    <Timer className="inline mr-1" size={16} />
+                    Waiting for buyer to confirm details
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -349,7 +619,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return (
           <div className="p-4 space-y-4">
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Payment Confirmation (Buyer)</h4>
+              <h4 className="font-medium text-white mb-2">Payment Confirmation {isVendor ? "(Waiting for Buyer)" : "(Buyer)"}</h4>
               
               <div className="p-3 mb-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
                 <p className="text-sm text-center text-yellow-400">
@@ -358,6 +628,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                 </p>
               </div>
               
+              {/* Payment details - Usually provided by the seller */}
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-400">Payment Amount:</span>
@@ -377,22 +648,73 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                 </div>
               </div>
               
-              <p className="text-sm text-gray-300 mb-4">Have you sent the payment to the account details above?</p>
+              {/* Wallet confirmation for buyer */}
+              {!isVendor && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-400">Your Crypto Will Be Sent To:</p>
+                  <p className="text-sm text-white font-mono bg-gray-700/50 p-2 rounded-md mt-1 break-all">
+                    {walletAddress || sessionData?.customer_wallet || "No wallet address provided"}
+                  </p>
+                  
+                  {(!walletAddress && !sessionData?.customer_wallet) && (
+                    <div className="mt-2">
+                      <label className="block text-sm text-gray-400 mb-1">Your Wallet Address</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text"
+                          value={walletAddress}
+                          onChange={handleWalletAddressChange}
+                          placeholder="Enter your wallet address"
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+                        />
+                        <button 
+                          onClick={saveWalletAddress}
+                          className="bg-green-500/20 border border-green-500/50 text-green-400 px-3 py-1 rounded-md text-sm font-medium hover:bg-green-500/30"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => proceedToNextStage("cancelled")}
-                  className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
-                >
-                  No, Cancel
-                </button>
-                <button 
-                  onClick={() => proceedToNextStage("release_funds")}
-                  className="w-1/2 bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
-                >
-                  Yes, Payment Sent
-                </button>
-              </div>
+              {/* Seller UI - Show status of buyer payment */}
+              {isVendor && (
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-center mb-4">
+                  <p className="text-sm text-blue-400">
+                    <Timer className="inline mr-1" size={16} />
+                    Waiting for buyer to send payment
+                  </p>
+                </div>
+              )}
+              
+              {/* Buyer UI - Confirm payment has been sent */}
+              {!isVendor && (
+                <>
+                  <p className="text-sm text-gray-300 mb-4">Have you sent the payment to the account details above?</p>
+                  
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => proceedToNextStage("cancelled")}
+                      className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
+                    >
+                      No, Cancel
+                    </button>
+                    <button 
+                      onClick={() => proceedToNextStage("release_funds")}
+                      disabled={!walletAddress && !sessionData?.customer_wallet}
+                      className={`w-1/2 font-medium rounded-lg px-4 py-2 transition-all duration-200 ${
+                        !walletAddress && !sessionData?.customer_wallet
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-green-600 to-green-500 text-gray-900 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                      }`}
+                    >
+                      Yes, Payment Sent
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );
@@ -401,12 +723,12 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return (
           <div className="p-4 space-y-4">
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Release Funds (Seller)</h4>
+              <h4 className="font-medium text-white mb-2">Payment Confirmation {isVendor ? "(Seller)" : "(Waiting for Seller)"}</h4>
               
               <div className="p-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <p className="text-sm text-center text-blue-400">
                   <AlertCircle className="inline mr-1" size={16} />
-                  Buyer has confirmed payment sent. Please check your account.
+                  {isVendor ? "Buyer has confirmed payment sent. Please check your account." : "Waiting for seller to confirm payment received."}
                 </p>
               </div>
               
@@ -416,7 +738,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   <span className="text-sm text-white font-medium">$1,250 NZD</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Buyer Name:</span>
+                  <span className="text-sm text-gray-400">{isVendor ? "Buyer" : "Your"} Name:</span>
                   <span className="text-sm text-white font-medium">Jane Doe</span>
                 </div>
                 <div className="flex justify-between">
@@ -433,22 +755,82 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                 </div>
               </div>
               
-              <p className="text-sm text-gray-300 mb-4">Have you received the payment in your account? If yes, please release the funds from escrow to complete the trade.</p>
+              {/* Seller inputs wallet address if not yet provided */}
+              {isVendor && !sessionData?.vendor_wallet && (
+                <div className="mb-4">
+                  <label className="block text-sm text-gray-400 mb-1">Your Wallet Address (sending from)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={walletAddress}
+                      onChange={handleWalletAddressChange}
+                      placeholder="Enter your wallet address"
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+                    />
+                    <button 
+                      onClick={saveWalletAddress}
+                      className="bg-green-500/20 border border-green-500/50 text-green-400 px-3 py-1 rounded-md text-sm font-medium hover:bg-green-500/30"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
               
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => proceedToNextStage("cancelled")}
-                  className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
-                >
-                  No, Not Received
-                </button>
-                <button 
-                  onClick={() => proceedToNextStage("completed")}
-                  className="w-1/2 bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
-                >
-                  Release Funds
-                </button>
-              </div>
+              {/* Display both wallet addresses if available */}
+              {sessionData?.vendor_wallet && sessionData?.customer_wallet && (
+                <div className="bg-gray-800/80 border border-gray-700 rounded-lg p-3 mb-4 space-y-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400">Seller Wallet (sending from):</p>
+                    <p className="text-xs text-white font-mono bg-gray-700/50 p-1.5 rounded-md break-all">
+                      {sessionData.vendor_wallet}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400">Buyer Wallet (sending to):</p>
+                    <p className="text-xs text-white font-mono bg-gray-700/50 p-1.5 rounded-md break-all">
+                      {sessionData.customer_wallet}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Only seller can confirm receipt */}
+              {isVendor && (
+                <>
+                  <p className="text-sm text-gray-300 mb-4">Have you received the payment in your account?</p>
+                  
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => proceedToNextStage("cancelled")}
+                      className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
+                    >
+                      No, Not Received
+                    </button>
+                    <button 
+                      onClick={() => proceedToNextStage("completed")}
+                      disabled={!sessionData?.vendor_wallet}
+                      className={`w-1/2 font-medium rounded-lg px-4 py-2 transition-all duration-200 ${
+                        !sessionData?.vendor_wallet
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-green-600 to-green-500 text-gray-900 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                      }`}
+                    >
+                      Yes, Payment Received
+                    </button>
+                  </div>
+                </>
+              )}
+              
+              {/* Buyer just sees waiting message */}
+              {!isVendor && (
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-center">
+                  <p className="text-sm text-blue-400">
+                    <Timer className="inline mr-1" size={16} />
+                    Waiting for seller to confirm payment received
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -469,7 +851,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Trade ID:</span>
-                <span className="text-sm text-white font-medium">T12345-BTC</span>
+                <span className="text-sm text-white font-medium">{sessionId}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Asset:</span>
@@ -479,10 +861,29 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                 <span className="text-sm text-gray-400">Value:</span>
                 <span className="text-sm text-white font-medium">$1,250 NZD</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-400">Transaction Hash:</span>
-                <span className="text-sm text-white font-medium truncate">0x1a2b...3c4d</span>
-              </div>
+              
+              {/* Transaction wallet details */}
+              {sessionData?.vendor_wallet && sessionData?.customer_wallet && (
+                <>
+                  <div className="pt-2 border-t border-gray-700 mt-2">
+                    <p className="text-sm text-gray-400 mb-1">Transaction Details:</p>
+                    <div className="space-y-2">
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-400">From (Seller):</p>
+                        <p className="text-xs text-white font-mono bg-gray-700/50 p-1.5 rounded-md break-all">
+                          {sessionData.vendor_wallet}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-400">To (Buyer):</p>
+                        <p className="text-xs text-white font-mono bg-gray-700/50 p-1.5 rounded-md break-all">
+                          {sessionData.customer_wallet}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             
             <button 
@@ -510,11 +911,17 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Trade ID:</span>
-                <span className="text-sm text-white font-medium">T12345-BTC</span>
+                <span className="text-sm text-white font-medium">{sessionId}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Cancellation Reason:</span>
-                <span className="text-sm text-white font-medium">Payment not received</span>
+                <span className="text-sm text-white font-medium">
+                  {sessionData?.vendor_complete === "-1" 
+                    ? "Cancelled by seller" 
+                    : sessionData?.customer_complete === "-1" 
+                      ? "Cancelled by buyer" 
+                      : "Payment not received"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Status:</span>
@@ -532,6 +939,17 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         );
 
       case "rate_experience":
+        // Handler for submitting rating
+        const handleSubmitRating = async () => {
+          try {
+            // Submit the rating via the complete status API with "1" for success
+            await updateCompleteStatus("1");
+            closeModal();
+          } catch (err) {
+            console.error("Error submitting rating:", err);
+          }
+        };
+        
         return (
           <div className="p-4 space-y-4">
             <div className="text-center mb-4">
@@ -557,8 +975,13 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
             </div>
             
             <button 
-              onClick={closeModal}
-              className="w-full bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
+              onClick={handleSubmitRating}
+              disabled={counterpartyRating === 0}
+              className={`w-full font-medium rounded-lg px-4 py-2 transition-all duration-200 ${
+                counterpartyRating === 0
+                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-green-600 to-green-500 text-gray-900 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+              }`}
             >
               Submit Rating
             </button>
@@ -584,8 +1007,19 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              {getStatusIcon()}
-              <span className="font-medium">{getStatusBarText()}</span>
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-400 border-t-transparent"></div>
+              ) : (
+                getStatusIcon()
+              )}
+              <span className="font-medium">
+                {loading ? "Loading trade status..." : getStatusBarText()}
+                {!loading && sessionData && (
+                  <span className="text-xs ml-2 opacity-80">
+                    {getRoleLabel()} {getCounterpartyRoleLabel()}
+                  </span>
+                )}
+              </span>
             </div>
             <span className="text-sm text-gray-400">Click to update</span>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   Send,
@@ -54,6 +55,7 @@ interface ChatData {
 const ChatRoom = () => {
   const router = useRouter();
   const { id: chatId } = useParams() as { id: string };
+  const { data: session } = useSession();
 
   // References
   const messageInputRef = useRef<HTMLInputElement>(null);
@@ -66,8 +68,8 @@ const ChatRoom = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Use real-time message hook
-  const { isConnected, lastEvent, sendMessage } = useRealTimeMessages();
+  // Use real-time message hook with session
+  const { isConnected, lastEvent, sendMessage } = useRealTimeMessages(session);
 
   // Fetch chat data from API
   useEffect(() => {

@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 
 // Custom hook for SSE connections
-export function useRealTimeMessages() {
-  const { data: session } = useSession();
+export function useRealTimeMessages(session: Session | null) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<any>(null);
   const eventSourceRef = useRef<EventSource | null>(null);

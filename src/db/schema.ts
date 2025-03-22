@@ -64,6 +64,7 @@ export const userProfile = pgTable("userProfiles", {
   createdAt: timestamp("created_at").defaultNow(),
   bio: text("bio"),
   avatar: text("avatar"),
+  numTrades: integer("num_trades").default(0),
 });
 
 export const listings = pgTable("listings", {

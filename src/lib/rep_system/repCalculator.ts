@@ -1,52 +1,32 @@
-/**
- * 
- * @param C constant C, defaults to 2
- * @returns A value calculator that returns the value for the initialised C given any n
- */
-function val(C: number = 2): (n: number) => number {
-    return function(n: number) {
-        // Calculates value given constant C and number of times traded in last 30 days (n)
-        return C * Math.max(-1*Math.log10(n + 0.5) + 1, 0.05);
-    };
+
+const expected = (rA: number, rB: number): number => {
+    return 1 / (1 + Math.pow(10, (rA - rB) / 1000));
 }
 
-/**
- * 
- * @param val value of the interaction for the trader
- * @param rep reputation of the trader
- * @param boost boost (defaults to 1)
- * @returns 
- */
-const power = (val: number, rep: number, boost: number = 1) => {
-    return val * rep * boost;
+const weight = (rA: number): number => {
+    return rA / (rA + 5000);
 }
 
-
-
-
-function expectedProbabilites(differenceForTraderA: number , differenceForTraderB: number): {probabilityA: number , probabilityB: number} {
-    
-    let probabilityA: number = ( 1 / ( 1 + ( 10 ** ((differenceForTraderB - differenceForTraderA)/400)))) 
-    let probabilityB: number = ( 1 / ( 1 + ( 10 ** ((differenceForTraderA - differenceForTraderB)/400)))) 
-
-    return{
-        probabilityA, 
-        probabilityB
+function repUpdate(rReciever: number, rRater: number, score: number, numTrades: number): number {
+    if (rReciever === -1) {
+        if (score === 1){
+            rReciever = 1300
+            return rReciever;
+        }
+        if (score === 0){
+            rReciever = 1100
+            return rReciever;
+        }
+        if (score === -1){
+            rReciever = 980
+            return rReciever;
+        }
+        return rReciever + 1;
     }
+    let newRating = rReciever + (150 * (1 / (0.6 * Math.sqrt(numTrades + 1)))) * weight(rRater) * (score - expected(rRater, rReciever));
+    newRating = Math.min(newRating, 2000);
+    newRating = Math.round(newRating);
+    return newRating;
 }
 
-function nextRatings(currRating: number, score: number, expectedProbability: number): number{
-
-    /**
-     * 100 is the constant which needs to be changed and optimised 
-     */
-    let nextRating: number = (currRating + (100*(score - expectedProbability)))
-
-    return nextRating;
-    
-}
-
-function starRating(rep: number): number{
-
-    return (5/2000 * rep);
-}
+console.log(repUpdate(1000, 0, 0, 0));

@@ -72,7 +72,7 @@ export const POST = async (request: Request) => {
         .where(eq(userProfile.auth_id, session.user.id!));
     } else {
       // Insert new profile
-      await updateUserElo(session.user.id!, "-1");
+      await updateUserElo(session.user.id!, -1);
       await db.insert(userProfile).values([
         {
           auth_id: session.user.id!, // ✅ Correctly using auth_id

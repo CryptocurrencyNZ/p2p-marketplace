@@ -40,7 +40,7 @@ const AddListingInput = z.object({
   currency: z.string(),
   descrption: z.string(),
   onChainProof: z.boolean(),
-  marginRate: z.number(),
+  marginRate: z.number().transform((x) => String(x)),
 });
 
 export const POST = async (request: Request) => {
@@ -68,6 +68,7 @@ export const POST = async (request: Request) => {
     };
     
     await db.insert(listings).values([newListing]);
+
 
     return NextResponse.json(newListing);
   } catch (error) {

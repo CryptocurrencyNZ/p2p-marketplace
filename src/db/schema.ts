@@ -1,5 +1,4 @@
 import {
-  boolean,
   timestamp,
   pgTable,
   text,
@@ -50,4 +49,16 @@ export const sessions = pgTable("session", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expires: timestamp("expires", { mode: "date" }).notNull(),
+});
+
+// Business logic schema
+export const userProfile = pgTable("userProfiles", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  auth_id: text("id").unique(),
+  username: text("string").notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  bio: text("bio"),
+  avatar: text("avatar"),
 });

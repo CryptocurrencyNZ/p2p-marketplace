@@ -8,8 +8,12 @@ export default function RootLayout({
 }>) {
   return (
     <Protected>
-      <Navbar />
-      <main>{children}</main>
+      <div className="flex min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+        <Navbar />
+        <main className="flex-1 pb-14 md:pb-0 md:pl-20 xl:pl-64 w-full">
+          {children}
+        </main>
+      </div>
     </Protected>
   );
 }

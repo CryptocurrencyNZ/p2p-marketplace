@@ -20,3 +20,33 @@ function val(C: number = 2): (n: number) => number {
 const power = (val: number, rep: number, boost: number = 1) => {
     return val * rep * boost;
 }
+
+
+
+
+function expectedProbabilites(differenceForTraderA: number , differenceForTraderB: number): {probabilityA: number , probabilityB: number} {
+    
+    let probabilityA: number = ( 1 / ( 1 + ( 10 ** ((differenceForTraderB - differenceForTraderA)/400)))) 
+    let probabilityB: number = ( 1 / ( 1 + ( 10 ** ((differenceForTraderA - differenceForTraderB)/400)))) 
+
+    return{
+        probabilityA, 
+        probabilityB
+    }
+}
+
+function nextRatings(currRating: number, score: number, expectedProbability: number): number{
+
+    /**
+     * 100 is the constant which needs to be changed and optimised 
+     */
+    let nextRating: number = (currRating + (100*(score - expectedProbability)))
+
+    return nextRating;
+    
+}
+
+function starRating(rep: number): number{
+
+    return (5/2000 * rep);
+}

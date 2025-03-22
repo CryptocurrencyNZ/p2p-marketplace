@@ -38,7 +38,6 @@ const AddListingInput = z.object({
   price: z.number().transform((x) => String(x)),
   isBuy: z.boolean(),
   currency: z.string(),
-  crypto_type: z.string(),
   descrption: z.string(),
   onChainProof: z.boolean(),
   marginRate: z.number().transform((x) => String(x)),
@@ -56,9 +55,20 @@ export const POST = async (request: Request) => {
     const payload = await request.json();
     const data = AddListingInput.parse(payload);
 
-    const newListing = { user_auth_id: session.user.id, ...data };
+    const newListing = {
+        user_auth_id: session.user.id,
+        title: data.title,
+        marginRate: String(data.marginRate), // Convert to string
+        location: data.location,
+        onChainProof: data.onChainProof,
+        currency: data.currency,
+        price: data.price, // This is already a string from your z.transform
+        isBuy: data.isBuy,
+        descrption: data.descrption,
+    };
+    
+    await db.insert(listings).values([newListing]);
 
-    await db.insert(listings).values(newListing);
 
     return NextResponse.json(newListing);
   } catch (error) {

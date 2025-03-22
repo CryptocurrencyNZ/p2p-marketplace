@@ -53,4 +53,4 @@ export async function POST(
     console.error("Error marking messages as read:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
-} 
+}

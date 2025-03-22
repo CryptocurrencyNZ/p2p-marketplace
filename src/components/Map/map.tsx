@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { TradeListing } from "./types";
 
 interface P2PCryptoTradeMapProps {
@@ -29,6 +29,65 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
   fetchListings,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
+
+  // Memoize the addMarkersToMap function with useCallback
+  const addMarkersToMap = useCallback((map: any, tradeListings: TradeListing[]) => {
+    // Clear existing markers if needed
+    const existingMarkers = document.querySelectorAll('.marker');
+    existingMarkers.forEach(marker => marker.remove());
+
+    // Add markers for each listing
+    tradeListings.forEach((listing) => {
+      // Create custom element for marker
+      const el = document.createElement("div");
+      el.className = "marker";
+      
+      // Set color based on trade type (buy/sell)
+      const markerColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444"; // Green for buy, red for sell
+      
+      el.style.backgroundColor = markerColor;
+      el.style.width = "25px";
+      el.style.height = "25px";
+      el.style.borderRadius = "50%";
+      el.style.border = "2px solid white";
+      el.style.cursor = "pointer";
+
+      // Create popup for the marker
+      const popup = new window.mapboxgl.Popup({ offset: 25 }).setHTML(`
+        <div style="color: black; max-width: 200px;">
+          <h3 style="font-weight: bold; margin-bottom: 5px;">${listing.title}</h3>
+          <p>${listing.cryptoType} - ${listing.price} ${listing.currency}</p>
+          <p>Trader: ${listing.trader.name} (${listing.trader.rating}★)</p>
+          <p>Type: ${listing.tradeType === "buy" ? "Buying" : "Selling"}</p>
+        </div>
+      `);
+
+      // Create and add the marker
+      const marker = new window.mapboxgl.Marker(el)
+        .setLngLat([listing.location.lng, listing.location.lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      // Add click event to focus on this listing
+      el.addEventListener("click", () => {
+        setSelectedListing(listing);
+
+        // Fly to this location
+        map.flyTo({
+          center: [listing.location.lng, listing.location.lat],
+          zoom: 12,
+          essential: true,
+        });
+
+        // On mobile, show the panel
+        if (isMobile) {
+          setShowPanel(true);
+          // Hide filter menu when showing panel
+          setShowFilterMenu(false);
+        }
+      });
+    });
+  }, [setSelectedListing, isMobile, setShowPanel, setShowFilterMenu]);
 
   // Initialize the map
   useEffect(() => {
@@ -95,66 +154,7 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
 
     // Initialize map when component mounts
     initializeMap();
-  }, [listings, mapObject, setMapObject]);
-
-  // Function to add markers to the map
-  const addMarkersToMap = (map: any, tradeListings: TradeListing[]) => {
-    // Clear existing markers if needed
-    const existingMarkers = document.querySelectorAll('.marker');
-    existingMarkers.forEach(marker => marker.remove());
-
-    // Add markers for each listing
-    tradeListings.forEach((listing) => {
-      // Create custom element for marker
-      const el = document.createElement("div");
-      el.className = "marker";
-      
-      // Set color based on trade type (buy/sell)
-      const markerColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444"; // Green for buy, red for sell
-      
-      el.style.backgroundColor = markerColor;
-      el.style.width = "25px";
-      el.style.height = "25px";
-      el.style.borderRadius = "50%";
-      el.style.border = "2px solid white";
-      el.style.cursor = "pointer";
-
-      // Create popup for the marker
-      const popup = new window.mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div style="color: black; max-width: 200px;">
-          <h3 style="font-weight: bold; margin-bottom: 5px;">${listing.title}</h3>
-          <p>${listing.cryptoType} - ${listing.price} ${listing.currency}</p>
-          <p>Trader: ${listing.trader.name} (${listing.trader.rating}★)</p>
-          <p>Type: ${listing.tradeType === "buy" ? "Buying" : "Selling"}</p>
-        </div>
-      `);
-
-      // Create and add the marker
-      const marker = new window.mapboxgl.Marker(el)
-        .setLngLat([listing.location.lng, listing.location.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      // Add click event to focus on this listing
-      el.addEventListener("click", () => {
-        setSelectedListing(listing);
-
-        // Fly to this location
-        map.flyTo({
-          center: [listing.location.lng, listing.location.lat],
-          zoom: 12,
-          essential: true,
-        });
-
-        // On mobile, show the panel
-        if (isMobile) {
-          setShowPanel(true);
-          // Hide filter menu when showing panel
-          setShowFilterMenu(false);
-        }
-      });
-    });
-  };
+  }, [listings, mapObject, setMapObject, addMarkersToMap]);
 
   return (
     <div ref={mapRef} className="w-full h-full">

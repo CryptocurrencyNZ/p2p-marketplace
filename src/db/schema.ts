@@ -68,21 +68,41 @@ export const userProfile = pgTable("userProfiles", {
   avatar: text("avatar"),
 });
 
+export const tradeSession = pgTable("trade_session", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  listingId: text("linting_id")
+    .notNull()
+    .references(() => listings.id),
+  vendor_id: text("receiver_id")
+    .notNull()
+    .references(() => users.id),
+  customer_id: text("customer_id")
+    .notNull()
+    .references(() => users.id),
+  onChain: boolean("onchain").notNull(),
+  vendor_start: boolean("vendor_start").default(false),
+  customer_start: boolean("customer_start").default(false),
+  vendor_wallet: text("vendor_start"),
+  customer_wallet: text("customer_start"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  vendor_complete: boolean("vendor_complete").default(false),
+  customer_complete: boolean("customer_complete").default(false),
+});
+
 // Chat schema - single table approach
 export const messages = pgTable("messages", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  senderId: text("sender_id")
-    .notNull()
-    .references(() => users.id),
-  receiverId: text("receiver_id")
-    .notNull()
-    .references(() => users.id),
+  fromVender: boolean("from_vendor").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   isRead: boolean("is_read").notNull().default(false),
-  conversationID: text("conversation_id"),
+  session_id: text("session_id")
+    .notNull()
+    .references(() => tradeSession.id),
 });
 
 // Starred chats table - tracks which users have starred which conversations

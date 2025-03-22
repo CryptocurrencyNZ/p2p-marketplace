@@ -6,11 +6,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 export const GET = async () => {
+  const session = await auth();
+  if (!session || !session.user)
+    return NextResponse.json(
+      { message: "Not authenticated" },
+      { status: 401 },
+    );
+    
+  if (!session.user.id) {
+    return NextResponse.json(
+      { message: "User ID not found" },
+      { status: 400 },
+    );
+  }
+    
   try {
     const list = await db
       .select({
         id: listings.id,
-        userId: userProfile.id,
+        userId: userProfile.auth_id,
         username: userProfile.username,
         createdAt: listings.createdAt,
         title: listings.title,
@@ -23,6 +37,7 @@ export const GET = async () => {
         marginRate: listings.marginRate,
       })
       .from(listings)
+      .where(eq(listings.user_auth_id, session.user.id))
       .innerJoin(userProfile, eq(userProfile.auth_id, listings.user_auth_id));
 
     return NextResponse.json(list);

@@ -229,25 +229,25 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
     <div className="bg-transparent p-2 flex flex-wrap items-center justify-between gap-2 w-full">
       <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1 w-full">
         <button
-          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'all' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'all' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gray-800 text-gray-200'}`}
           onClick={() => setActiveFilter('all')}
         >
           All
         </button>
         <button
-          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'buying' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'buying' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-200'}`}
           onClick={() => setActiveFilter('buying')}
         >
           Buying
         </button>
         <button
-          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'selling' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'selling' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-200'}`}
           onClick={() => setActiveFilter('selling')}
         >
           Selling
         </button>
         <select
-          className="px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-800"
+          className="px-3 py-1 rounded-full text-sm font-medium bg-gray-800 text-gray-200"
           value={cryptoFilter}
           onChange={(e) => setCryptoFilter(e.target.value)}
         >

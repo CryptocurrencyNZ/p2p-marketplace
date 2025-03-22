@@ -8,7 +8,6 @@ import {
   numeric,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { number } from "zod";
 
 export const users = pgTable("user", {
   id: text("id")
@@ -60,8 +59,9 @@ export const userProfile = pgTable("userProfiles", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   auth_id: text("auth_id").unique(),
+  age: integer("age"),
   username: text("string").notNull().unique(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
   bio: text("bio"),
   avatar: text("avatar"),
 });

@@ -100,18 +100,18 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
   // Function to add markers to the map
   const addMarkersToMap = (map: any, tradeListings: TradeListing[]) => {
     // Clear existing markers if needed
-    const existingMarkers = document.querySelectorAll('.marker');
-    existingMarkers.forEach(marker => marker.remove());
+    const existingMarkers = document.querySelectorAll(".marker");
+    existingMarkers.forEach((marker) => marker.remove());
 
     // Add markers for each listing
     tradeListings.forEach((listing) => {
       // Create custom element for marker
       const el = document.createElement("div");
       el.className = "marker";
-      
+
       // Set color based on trade type (buy/sell)
       const markerColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444"; // Green for buy, red for sell
-      
+
       el.style.backgroundColor = markerColor;
       el.style.width = "25px";
       el.style.height = "25px";

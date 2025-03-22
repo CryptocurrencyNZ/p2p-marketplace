@@ -22,7 +22,7 @@ export async function POST(
       .set({ isRead: true })
       .where(
         and(
-          eq(messages.conversationID, conversationId),
+          eq(messages.conversationId, conversationId), // Fixed property name
           eq(messages.receiverId, userId),
           eq(messages.isRead, false)
         )
@@ -33,4 +33,4 @@ export async function POST(
     console.error("Error marking messages as read:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
-} 
+}

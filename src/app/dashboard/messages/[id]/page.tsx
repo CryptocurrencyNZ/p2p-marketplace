@@ -211,7 +211,7 @@ const ChatRoom = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          chatId,
+          sessionId: chatId,
           content: newMessage.content,
         }),
       });

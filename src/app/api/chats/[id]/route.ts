@@ -12,31 +12,30 @@ export async function GET(
   if (!session || !session.user || !session.user.id)
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
 
-  const { id: conversationId } = await params;
+  const { id: sessionId } = await params;
   const userId = session.user.id;
 
-  // Get the 'since' parameter if it exists
-
   try {
-    const userMessages = await db
+    // First get the trade session to determine participants
+    const tradeSessionRecords = await db
       .select()
       .from(messages)
       .where(
         and(
-          eq(messages.session_id, conversationId),
+          eq(messages.session_id, sessionId),
           or(eq(messages.fromVender, true), eq(messages.fromVender, false)),
         ),
       )
       .limit(1);
 
-    if (userMessages.length === 0) {
+    if (!tradeSessionRecords || tradeSessionRecords.length === 0) {
       return NextResponse.json(
-        { error: "Conversation not found" },
+        { error: "Trade session not found" },
         { status: 404 },
       );
     }
 
-    const message = userMessages[0];
+    const message = tradeSessionRecords[0];
     // In this schema, we don't have sender/receiver IDs like that
     // Instead use the trade session to identify parties
     const tradeInfo = await db
@@ -61,25 +60,24 @@ export async function GET(
       .where(
         and(
           eq(starredChats.userId, userId),
-          eq(starredChats.conversationId, conversationId),
+          eq(starredChats.conversationId, sessionId),
         ),
       )
       .limit(1);
 
     const isStarred = starredCheck.length > 0;
 
+    // Get user profile and all messages
     const [otherUserProfile, otherUser, allMessages] = await Promise.all([
       db.select().from(userProfile).where(eq(userProfile.auth_id, otherUserId)),
       db.select().from(users).where(eq(users.id, otherUserId)),
       db
         .select()
         .from(messages)
-        .where(eq(messages.session_id, conversationId))
+        .where(eq(messages.session_id, sessionId))
         .orderBy(desc(messages.createdAt))
         .limit(32),
     ]);
-
-    // maybe need if stuff here
 
     // Format messages for client
     const formattedMessages = allMessages.map((msg) => {
@@ -102,7 +100,7 @@ export async function GET(
 
     // Create response object
     const chatData = {
-      id: conversationId,
+      id: sessionId,
       user: {
         name: otherUserProfile[0]?.username || otherUser[0]?.name || "Unknown",
         address: otherUserId,

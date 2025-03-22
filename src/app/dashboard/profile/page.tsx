@@ -21,6 +21,10 @@ import {
   Facebook,
   Linkedin,
 } from "lucide-react";
+import { auth } from "@/auth";
+import { convertRepToStar } from "@/lib/rep_system/repConversions";
+import { fetchUserElo } from '@/lib/rep_system/updateRep';
+import { profileEnd } from "console";
 
 // Define types for our profile data
 interface Listing {
@@ -56,6 +60,7 @@ interface ProfileApiResponse {
   created_at?: string;
   updated_at?: string;
   age?: number | null;
+  rep: number;
 }
 
 // Define type for profile update payload
@@ -78,8 +83,8 @@ interface EditedProfile {
 const initialUserData: UserProfile = {
   username: "",
   age: 0,
-  reputation: 0,
   totalTrades: 0,
+  reputation: 0,
   volumeTraded: "0 ETH",
   profileImage: "/api/placeholder/120/120",
   isVerified: false,
@@ -121,7 +126,10 @@ export default function ProfilePage() {
           bio: profile.bio || "No bio provided",
           profileImage: profile.avatar || "/pfp-placeholder.jpg",
           age: profile.age || 0,
+          reputation: profile.rep
         });
+
+        console.log(profile.rep);
 
         setEditedProfile({
           username: profile.username || "",
@@ -257,7 +265,7 @@ export default function ProfilePage() {
                 Age: {userData.age} • Joined {userData.joinedDate}
               </div>
 
-              <p className="mt-2 text-sm text-gray-300 max-w-md break-words overflow-hidden">
+              <p className="mt-2 text-sm text-gray-300 max-w-[320px] break-words overflow-hidden">
   {userData.bio}
 </p>
 

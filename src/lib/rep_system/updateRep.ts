@@ -13,7 +13,7 @@ export async function updateUserReputation(recievingUserId: string, raterUserId:
     await updateUserElo(recievingUserId, newRecieverELO);
 }
 
-async function fetchUserElo(userId: string): Promise<number> {
+export async function fetchUserElo(userId: string): Promise<number> {
     const resp = await fetch(`https://p2p-elo-worker.hunekejustus.workers.dev/get?id=${userId}`, { method: "GET" });
 
     if (!resp.ok) {

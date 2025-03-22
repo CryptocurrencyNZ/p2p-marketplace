@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { userProfile } from "@/db/schema";
-import { updateUserElo } from "@/lib/rep_system/updateRep";
+import { convertRepToStar } from "@/lib/rep_system/repConversions";
+import { fetchUserElo, updateUserElo } from "@/lib/rep_system/updateRep";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -36,7 +37,10 @@ export const GET = async () => {
       );
     }
 
-    return NextResponse.json(profile[0]);
+    const elo = await fetchUserElo(session.user.id!);
+    const rep = convertRepToStar(elo); 
+
+    return NextResponse.json({ ...profile[0], rep });
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

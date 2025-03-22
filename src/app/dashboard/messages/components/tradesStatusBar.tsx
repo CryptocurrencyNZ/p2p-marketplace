@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Check, AlertCircle, DollarSign, Timer, Star, ArrowRight, RotateCcw, Shield } from "lucide-react";
+import { X, Check, AlertCircle, DollarSign, Timer, Star, ArrowRight, RotateCcw, Shield, Wallet, Lock, Send, Unlock } from "lucide-react";
 
 const TradeStatusBar = ({ initialStage = "initiate" }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,6 +12,14 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
   });
   const [userRating, setUserRating] = useState(0);
   const [counterpartyRating, setCounterpartyRating] = useState(0);
+  // Add new state for trade details
+  const [tradeDetails, setTradeDetails] = useState({
+    tokenAddress: "",
+    amount: "",
+    buyerAddress: ""
+  });
+  // Add state for wallet connection
+  const [walletConnected, setWalletConnected] = useState(false);
 
   // Update stage when prop changes
   useEffect(() => {
@@ -37,8 +45,22 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
     }));
   };
 
+  // Mock function to connect wallet
+  const connectWallet = () => {
+    setWalletConnected(true);
+  };
+
+  // Handle trade detail input changes
+  const handleTradeDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTradeDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   // Mock function to advance to next stage - in production this would interact with your backend
-  const proceedToNextStage = (nextStage: any) => {
+  const proceedToNextStage = (nextStage: string) => {
     setCurrentStage(nextStage);
     closeModal();
   };
@@ -50,12 +72,14 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return tradeStatus.user && tradeStatus.counterparty 
           ? "Trade Initiated - Both Parties Accepted" 
           : "Awaiting Trade Acceptance";
-      case "confirm_details":
-        return "Buyer: Confirm Trade Details";
+      case "connect_wallet":
+        return "Pending: Seller to Connect Wallet";
+      case "lock_funds":
+        return "Pending: Seller to Lock Funds";
       case "fiat_sent":
         return "Pending: Buyer to Confirm Fiat Payment Sent";
-      case "confirm_received":
-        return "Pending: Seller to Confirm Payment Received";
+      case "release_funds":
+        return "Pending: Seller to Release Funds";
       case "completed":
         return "Trade Completed Successfully";
       case "cancelled":
@@ -74,9 +98,10 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return tradeStatus.user && tradeStatus.counterparty 
           ? "bg-green-500/20 border-green-500/50 text-green-400"
           : "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
-      case "confirm_details":
+      case "connect_wallet":
+      case "lock_funds":
       case "fiat_sent":
-      case "confirm_received":
+      case "release_funds":
         return "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
       case "completed":
         return "bg-green-500/20 border-green-500/50 text-green-400";
@@ -96,12 +121,14 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         return tradeStatus.user && tradeStatus.counterparty 
           ? <Check size={18} className="text-green-400" />
           : <AlertCircle size={18} className="text-yellow-400" />;
-      case "confirm_details":
-        return <AlertCircle size={18} className="text-yellow-400" />;
+      case "connect_wallet":
+        return <Wallet size={18} className="text-yellow-400" />;
+      case "lock_funds":
+        return <Lock size={18} className="text-yellow-400" />;
       case "fiat_sent":
         return <DollarSign size={18} className="text-yellow-400" />;
-      case "confirm_received":
-        return <Timer size={18} className="text-yellow-400" />;
+      case "release_funds":
+        return <Unlock size={18} className="text-yellow-400" />;
       case "completed":
         return <Check size={18} className="text-green-400" />;
       case "cancelled":
@@ -202,7 +229,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
               
               {tradeStatus.user && tradeStatus.counterparty && (
                 <button 
-                  onClick={() => proceedToNextStage("confirm_details")}
+                  onClick={() => proceedToNextStage("connect_wallet")}
                   className="w-full bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
                 >
                   Proceed to Next Step
@@ -212,36 +239,20 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
           </div>
         );
 
-      case "confirm_details":
+      case "connect_wallet":
         return (
           <div className="p-4 space-y-4">
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Trade Details (Buyer Confirmation)</h4>
+              <h4 className="font-medium text-white mb-2">Connect Wallet (Seller)</h4>
               
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Asset:</span>
-                  <span className="text-sm text-white font-medium">Bitcoin (BTC)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Amount:</span>
-                  <span className="text-sm text-white font-medium">0.025 BTC</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Fiat Price:</span>
-                  <span className="text-sm text-white font-medium">$1,250 NZD</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Payment Method:</span>
-                  <span className="text-sm text-white font-medium">Bank Transfer</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Escrow Status:</span>
-                  <span className="text-sm text-green-400 font-medium">Funds Secured</span>
-                </div>
+              <div className="p-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <p className="text-sm text-center text-blue-400">
+                  <Wallet className="inline mr-1" size={16} />
+                  Please connect your wallet to proceed with locking funds in the escrow contract
+                </p>
               </div>
               
-              <p className="text-sm text-gray-300 mb-4">Please carefully review the trade details above before proceeding.</p>
+              <p className="text-sm text-gray-300 mb-4">As the seller, you need to connect your wallet to lock the cryptocurrency in escrow.</p>
               
               <div className="flex gap-3">
                 <button 
@@ -251,10 +262,83 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   Cancel Trade
                 </button>
                 <button 
+                  onClick={() => {
+                    connectWallet();
+                    proceedToNextStage("lock_funds");
+                  }}
+                  className="w-1/2 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium rounded-lg shadow-[0_0_10px_rgba(59,130,246,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-200"
+                >
+                  Connect Wallet
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "lock_funds":
+        return (
+          <div className="p-4 space-y-4">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">Lock Funds in Escrow (Seller)</h4>
+              
+              <div className="p-3 mb-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                <p className="text-sm text-center text-green-400">
+                  <Lock className="inline mr-1" size={16} />
+                  Wallet Connected: {walletConnected ? "Yes" : "No"}
+                </p>
+              </div>
+              
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Token Address</label>
+                  <input 
+                    type="text" 
+                    name="tokenAddress"
+                    value={tradeDetails.tokenAddress}
+                    onChange={handleTradeDetailChange}
+                    placeholder="0x..."
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Amount</label>
+                  <input 
+                    type="text" 
+                    name="amount"
+                    value={tradeDetails.amount}
+                    onChange={handleTradeDetailChange}
+                    placeholder="0.0"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Buyer's Address</label>
+                  <input 
+                    type="text" 
+                    name="buyerAddress"
+                    value={tradeDetails.buyerAddress}
+                    onChange={handleTradeDetailChange}
+                    placeholder="0x..."
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md text-white p-2 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+                  />
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-300 mb-4">Please enter the details above and lock your funds in the escrow contract.</p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => proceedToNextStage("cancelled")}
+                  className="w-1/2 bg-gray-700 border border-gray-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-gray-600 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button 
                   onClick={() => proceedToNextStage("fiat_sent")}
                   className="w-1/2 bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
+                  disabled={!tradeDetails.tokenAddress || !tradeDetails.amount || !tradeDetails.buyerAddress}
                 >
-                  Confirm Details
+                  Lock Funds
                 </button>
               </div>
             </div>
@@ -303,7 +387,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   No, Cancel
                 </button>
                 <button 
-                  onClick={() => proceedToNextStage("confirm_received")}
+                  onClick={() => proceedToNextStage("release_funds")}
                   className="w-1/2 bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
                 >
                   Yes, Payment Sent
@@ -313,11 +397,11 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
           </div>
         );
 
-      case "confirm_received":
+      case "release_funds":
         return (
           <div className="p-4 space-y-4">
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Payment Confirmation (Seller)</h4>
+              <h4 className="font-medium text-white mb-2">Release Funds (Seller)</h4>
               
               <div className="p-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
                 <p className="text-sm text-center text-blue-400">
@@ -339,9 +423,17 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   <span className="text-sm text-gray-400">Reference:</span>
                   <span className="text-sm text-white font-medium">BTC-12345</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-400">Token:</span>
+                  <span className="text-sm text-white font-medium">{tradeDetails.amount} (from escrow)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-400">Receiver:</span>
+                  <span className="text-sm text-white font-medium truncate">{tradeDetails.buyerAddress || "0x..."}</span>
+                </div>
               </div>
               
-              <p className="text-sm text-gray-300 mb-4">Have you received the payment in your account?</p>
+              <p className="text-sm text-gray-300 mb-4">Have you received the payment in your account? If yes, please release the funds from escrow to complete the trade.</p>
               
               <div className="flex gap-3">
                 <button 
@@ -354,7 +446,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   onClick={() => proceedToNextStage("completed")}
                   className="w-1/2 bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
                 >
-                  Yes, Payment Received
+                  Release Funds
                 </button>
               </div>
             </div>
@@ -381,7 +473,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Asset:</span>
-                <span className="text-sm text-white font-medium">0.025 BTC</span>
+                <span className="text-sm text-white font-medium">{tradeDetails.amount || "0.025 BTC"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-400">Value:</span>
@@ -500,7 +592,7 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         </div>
       </div>
 
-      {/* Modal remains unchanged */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-800/70 backdrop-blur-sm border border-gray-700 rounded-lg shadow-[0_0_15px_rgba(34,197,94,0.2)] w-full max-w-md">

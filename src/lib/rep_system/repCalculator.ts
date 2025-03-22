@@ -17,8 +17,33 @@ function valCalc(C: number = 2): (n: number) => number {
  * @param boost boost (defaults to 1)
  * @returns 
  */
-const power = (n: number, rep: number, boost: number = 1, c: number | undefined) => {
-    const val = valCalc(c);
-    return val(n) * rep * boost;
+const power = (n: number, rep: number, C?: number): number => {
+    const val = valCalc(C);
+    return (val(n) * rep) / 2000 ;
 }
 
+const prob = (repA: number, repB: number) => {
+    return 1 / (1 + (Math.pow(10, (repB - repA) / 400)));
+}
+
+const nextRep = (repA: number, repB: number, scoreA: number, K: number = 10): number => {
+    return repA + K * (scoreA - prob(repA, repB));
+}
+
+function completeInteraction(repA: number, repB: number, scoreA: number, scoreB: number, n: number, K?: number, C?: number): [number, number] {
+    const powerA = power(n, repA);
+    const powerB = power(n, repB);
+
+    console.log(`Rep A before: ${repA}`);
+    console.log(`Rep B before: ${repB}`);
+
+    repA = scoreA * nextRep(repA, repB, scoreA, powerB);
+    repB = scoreB * nextRep(repB, repA, scoreB, powerA);
+
+    console.log(`Rep A after: ${repA}`);
+    console.log(`Rep B after: ${repB}`);
+
+    return [repA, repB];
+}
+
+completeInteraction(1100, 1000, 1.1, 0.9, 2);

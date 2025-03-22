@@ -1,5 +1,8 @@
 // Add this interface for the backend response structure
 import { TradeListing, TradeType, NZRegion } from "./types";
+import {convertRepToStar} from "@/lib/rep_system/repConversions"
+ 
+
 // Add this interface for the backend response structure
 export interface BackendListing {
   id: string;
@@ -14,6 +17,8 @@ export interface BackendListing {
   description: string;
   marginRate: string;
   onChainProof: boolean;
+  userRep:string;
+  nzValue:string;
 }
 
 // Location coordinates mapping for New Zealand regions
@@ -56,17 +61,6 @@ const regionToCityMap: Record<string, string> = {
   [NZRegion.Gisborne]: "Gisborne"
 };
 
-// Rating generation based on margin rate (lower margin rate = higher rating)
-const calculateRating = (marginRate: string): number => {
-  const rate = parseFloat(marginRate);
-  if (rate <= 1) return 5.0;
-  if (rate <= 3) return 4.8;
-  if (rate <= 5) return 4.5;
-  if (rate <= 8) return 4.2;
-  if (rate <= 12) return 3.9;
-  return 3.5;
-};
-
 // Generate number of completed trades
 const generateCompletedTrades = (rating: number): number => {
   const baseCount = Math.floor(rating * 20);
@@ -76,7 +70,7 @@ const generateCompletedTrades = (rating: number): number => {
 
 export const fetchMockListings = async (): Promise<TradeListing[]> => {
   try {
-    // Fetch data from API
+    // Fetch data from API - this endpoint should include user reputation data
     const response = await fetch("/api/listings");
     
     if (!response.ok) {
@@ -84,10 +78,15 @@ export const fetchMockListings = async (): Promise<TradeListing[]> => {
     }
     
     const backendListings: BackendListing[] = await response.json();
-    console.log("Raw backend data:", backendListings);
     
     // Transform the data to match frontend requirements
-    const transformedListings: TradeListing[] = backendListings.map((item, index) => {
+    const transformedListings = backendListings.map((item) => {
+      // For each listing, get the user reputation from the backend
+      // This assumes the backend sends reputation data or we fetch it separately
+      // If userRep isn't available directly, you'll need a different approach
+      const userRep = item.userRep
+      const starRating = convertRepToStar(parseInt(userRep, 10));
+      
       // Map backend location string to NZRegion enum value
       const region = item.location as keyof typeof NZRegion;
       
@@ -107,11 +106,10 @@ export const fetchMockListings = async (): Promise<TradeListing[]> => {
       
       const city = regionToCityMap[region] || String(region);
       
-      // Calculate rating based on margin rate
-      const rating = calculateRating(item.marginRate);
-      
-      // Generate number of completed trades
-      const completedTrades = generateCompletedTrades(rating);
+      // Generate number of completed trades based on rating
+      const completedTrades = generateCompletedTrades(starRating);
+
+      const nzValue = item.nzValue
       
       // Create the transformed listing
       const transformedListing: TradeListing = {
@@ -126,20 +124,21 @@ export const fetchMockListings = async (): Promise<TradeListing[]> => {
         price: parseFloat(item.price),
         currency: "NZD", // Using NZD as the display currency
         cryptoType: item.currency, // Using the currency field as cryptoType
-        tradeType: item.isBuy ? "buy" : "sell",
+        tradeType: item.isBuy ? TradeType.Buy : TradeType.Sell,
         trader: {
           name: item.username,
-          rating: rating,
+          rating: starRating,
           completedTrades: completedTrades
         },
         description: item.description,
-        createdAt: item.createdAt
+        createdAt: item.createdAt,
+        marginRate: item.marginRate,
+        nzValue:item.nzValue
       };
       
       return transformedListing;
     });
     
-    console.log("Transformed listings:", transformedListings);
     return transformedListings;
     
   } catch (error) {

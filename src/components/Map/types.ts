@@ -21,6 +21,8 @@ export interface TradeListing {
   };
   description: string;
   createdAt: string;
+  marginRate: string;
+  nzValue:string;
 }
 
 // Additional types that might be useful

@@ -3,15 +3,104 @@
 import React, { useState, useEffect } from "react";
 import { X, Check, AlertCircle, DollarSign, Timer, Star, ArrowRight, RotateCcw, Shield } from "lucide-react";
 
-const TradeStatusBar = ({ initialStage = "initiate" }) => {
+// Define the type for the session data
+interface TradeSessionData {
+  id: string;
+  vendor_start: boolean;
+  buyer_start?: boolean;
+  // Add other session fields as needed
+}
+
+interface TradeStatusBarProps {
+  initialStage?: string;
+  sessionId?: string;
+}
+
+const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBarProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState(initialStage);
   const [tradeStatus, setTradeStatus] = useState({
     user: false,
     counterparty: false
   });
+  const [sessionData, setSessionData] = useState<TradeSessionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userRating, setUserRating] = useState(0);
   const [counterpartyRating, setCounterpartyRating] = useState(0);
+
+  // Fetch trade session status
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const fetchTradeSessionStatus = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/trade-sessions/start-status?sessionId=${sessionId}`);
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch trade session status");
+        }
+        
+        const data = await response.json();
+        setSessionData(data);
+        
+        // Update component state based on session data
+        if (data.vendor_start !== undefined) {
+          setTradeStatus(prev => ({
+            ...prev,
+            user: data.vendor_start
+          }));
+        }
+        
+        // Here you can update other states based on the session data
+        
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching trade session status:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Initial fetch
+    fetchTradeSessionStatus();
+    
+    // Set up polling for status updates
+    const intervalId = setInterval(fetchTradeSessionStatus, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, [sessionId]);
+
+  // Update the API when status changes
+  const updateTradeSessionStatus = async (status: boolean) => {
+    if (!sessionId) return;
+    
+    try {
+      const response = await fetch('/api/trade-sessions/start-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          status
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update trade session status");
+      }
+      
+      const data = await response.json();
+      setSessionData(data[0]); // Update with the returned data
+      
+    } catch (err) {
+      console.error("Error updating trade session status:", err);
+      // You might want to handle this error in the UI
+    }
+  };
 
   // Update stage when prop changes
   useEffect(() => {
@@ -23,24 +112,87 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
   
   // Toggle user's acceptance status
   const toggleUserStatus = () => {
+    const newStatus = !tradeStatus.user;
     setTradeStatus(prev => ({
       ...prev,
-      user: !prev.user
+      user: newStatus
     }));
+    updateTradeSessionStatus(newStatus);
   };
   
   // Toggle counterparty's acceptance status
-  const toggleCounterpartyStatus = () => {
+  const toggleCounterpartyStatus = async () => {
+    const newStatus = !tradeStatus.counterparty;
     setTradeStatus(prev => ({
       ...prev,
-      counterparty: !prev.counterparty
+      counterparty: newStatus
     }));
+    
+    // Only update the API if we have a sessionId
+    if (sessionId) {
+      try {
+        const response = await fetch('/api/trade-sessions/start-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId,
+            status: newStatus,
+            isCounterparty: true // Flag to indicate this is the counterparty's status
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to update counterparty status");
+        }
+        
+        const data = await response.json();
+        setSessionData(data[0]); // Update with the returned data
+      } catch (err) {
+        console.error("Error updating counterparty status:", err);
+        // Reset state if the API call fails
+        setTradeStatus(prev => ({
+          ...prev,
+          counterparty: !newStatus
+        }));
+      }
+    }
   };
 
   // Mock function to advance to next stage - in production this would interact with your backend
-  const proceedToNextStage = (nextStage: any) => {
-    setCurrentStage(nextStage);
-    closeModal();
+  const proceedToNextStage = async (nextStage: string) => {
+    // If we're moving from initiate to confirm_details, this represents starting the trade
+    if (currentStage === "initiate" && nextStage === "confirm_details") {
+      try {
+        // Call the API to officially start the trade
+        const response = await fetch('/api/trade-sessions/start-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId,
+            status: true  // true indicates the trade is starting
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to start trade");
+        }
+        
+        // Update the stage only if API call was successful
+        setCurrentStage(nextStage);
+        closeModal();
+      } catch (err) {
+        console.error("Error starting trade:", err);
+        // You could show an error message to the user here
+      }
+    } else {
+      // For other stage transitions, simply update the UI
+      setCurrentStage(nextStage);
+      closeModal();
+    }
   };
 
   // Determine the status bar text based on current stage
@@ -166,6 +318,13 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
                   {tradeStatus.user ? "Accepted" : "Accept"}
                 </button>
               </div>
+              
+              {/* Display status from API if session data is loaded */}
+              {sessionData && (
+                <div className="mt-2 text-xs text-gray-400">
+                  Status: {sessionData.vendor_start ? "Accepted" : "Not Accepted"} by vendor
+                </div>
+              )}
             </div>
             
             {/* Counterparty acceptance */}
@@ -492,8 +651,19 @@ const TradeStatusBar = ({ initialStage = "initiate" }) => {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              {getStatusIcon()}
-              <span className="font-medium">{getStatusBarText()}</span>
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-400 border-t-transparent"></div>
+              ) : (
+                getStatusIcon()
+              )}
+              <span className="font-medium">
+                {loading ? "Loading trade status..." : getStatusBarText()}
+                {!loading && sessionData && (
+                  <span className="text-xs ml-2 opacity-80">
+                    {sessionData.vendor_start ? "(Vendor accepted)" : "(Awaiting vendor)"}
+                  </span>
+                )}
+              </span>
             </div>
             <span className="text-sm text-gray-400">Click to update</span>
           </div>

@@ -89,6 +89,7 @@ export const tradeSession = pgTable("trade_session", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   vendor_complete: numeric("vendor_complete"),
   customer_complete: numeric("customer_complete"),
+  stage: text("stage").default("initiate"),
 });
 
 // Chat schema - single table approach

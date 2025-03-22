@@ -18,6 +18,14 @@ interface TradeSessionData {
   // Add other session fields as needed
 }
 
+// Adding TradeDetails interface for the trade information
+interface TradeDetails {
+  amount: string;
+  buyerAddress: string;
+  value: string;
+  currency: string;
+}
+
 interface TradeStatusBarProps {
   initialStage?: string;
   sessionId?: string;
@@ -37,6 +45,13 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
   const [counterpartyRating, setCounterpartyRating] = useState(0);
   const [isVendor, setIsVendor] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  // Add tradeDetails state with default values
+  const [tradeDetails, setTradeDetails] = useState<TradeDetails>({
+    amount: "0.025 BTC",
+    buyerAddress: "0x...",
+    value: "1,250",
+    currency: "NZD"
+  });
 
   // Fetch trade session status
   useEffect(() => {
@@ -254,7 +269,7 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
           await updateCompleteStatus("1");
         }
       }
-      else if (nextStage === "confirm_received") {
+      else if (nextStage === "release_funds") {
         // If buyer confirms sending payment
         if (!isVendor) {
           await updateCompleteStatus("1");
@@ -322,7 +337,7 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
         return isVendor 
           ? "Waiting: Buyer to Send Payment" 
           : "Pending: Confirm Fiat Payment Sent";
-      case "confirm_received":
+      case "release_funds":
         return isVendor 
           ? "Pending: Confirm Payment Received" 
           : "Waiting: Seller to Confirm Payment";
@@ -354,8 +369,7 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
         return tradeStatus.user && tradeStatus.counterparty 
           ? "bg-green-500/20 border-green-500/50 text-green-400"
           : "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
-      case "connect_wallet":
-      case "lock_funds":
+      case "confirm_details":
       case "fiat_sent":
       case "release_funds":
         return "bg-yellow-500/20 border-yellow-500/50 text-yellow-400";
@@ -377,10 +391,8 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
         return tradeStatus.user && tradeStatus.counterparty 
           ? <Check size={18} className="text-green-400" />
           : <AlertCircle size={18} className="text-yellow-400" />;
-      case "connect_wallet":
+      case "confirm_details":
         return <Wallet size={18} className="text-yellow-400" />;
-      case "lock_funds":
-        return <Lock size={18} className="text-yellow-400" />;
       case "fiat_sent":
         return <DollarSign size={18} className="text-yellow-400" />;
       case "release_funds":
@@ -502,7 +514,7 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
               
               {tradeStatus.user && tradeStatus.counterparty && (
                 <button 
-                  onClick={() => proceedToNextStage("connect_wallet")}
+                  onClick={() => proceedToNextStage("confirm_details")}
                   className="w-full bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] px-4 py-2 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-200"
                 >
                   Proceed to Next Step
@@ -690,7 +702,7 @@ const TradeStatusBar = ({ initialStage = "initiate", sessionId }: TradeStatusBar
                       No, Cancel
                     </button>
                     <button 
-                      onClick={() => proceedToNextStage("confirm_received")}
+                      onClick={() => proceedToNextStage("release_funds")}
                       disabled={!walletAddress && !sessionData?.customer_wallet}
                       className={`w-1/2 font-medium rounded-lg px-4 py-2 transition-all duration-200 ${
                         !walletAddress && !sessionData?.customer_wallet

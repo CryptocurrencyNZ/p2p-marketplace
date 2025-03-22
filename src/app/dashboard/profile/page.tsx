@@ -260,10 +260,9 @@ export default function ProfilePage() {
                 Age: {userData.age} • Joined {userData.joinedDate}
               </div>
 
-              {/* Bio */}
-              <p className="mt-2 text-sm text-gray-300 max-w-md">
-                {userData.bio}
-              </p>
+              <p className="mt-2 text-sm text-gray-300 max-w-md break-words overflow-hidden">
+  {userData.bio}
+</p>
 
               <div className="mt-4 grid grid-cols-3 gap-4">
                 <div className="bg-gray-800/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-700">
@@ -432,7 +431,7 @@ export default function ProfilePage() {
                     to get started.
                   </p>
                   <Link
-                    href="/create"
+                    href="create"
                     className="mt-4 inline-flex bg-green-600 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
                   >
                     Create Listing

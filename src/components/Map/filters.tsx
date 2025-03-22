@@ -20,7 +20,7 @@ interface FiltersComponentProps {
 }
 
 // New Zealand regions
-const NZ_REGIONS = [
+export const NZ_REGIONS = [
   "All Regions",
   "Auckland",
   "Bay of Plenty",

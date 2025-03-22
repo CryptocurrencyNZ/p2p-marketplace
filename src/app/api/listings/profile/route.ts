@@ -38,7 +38,6 @@ const AddListingInput = z.object({
   price: z.number().transform((x) => String(x)),
   isBuy: z.boolean(),
   currency: z.string(),
-  crypto_type: z.string(),
   descrption: z.string(),
   onChainProof: z.boolean(),
   marginRate: z.number().transform((x) => String(x)),

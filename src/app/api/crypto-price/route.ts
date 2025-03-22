@@ -1,9 +1,18 @@
 // File: app/api/crypto-price/route.ts
 
 import { NextResponse } from 'next/server';
-import { SUPPORTED_CURRENCIES, Currency, CurrencyType } from '@/lib/crypto';
+import { SUPPORTED_CURRENCIES } from '@/lib/crypto';
 
 // Define types
+type CurrencyType = 'crypto' | 'fiat';
+
+interface Currency {
+  id: string;
+  name: string;
+  symbol: string;
+  type: CurrencyType;
+}
+
 interface CryptoPrice {
   [coinId: string]: {
     usd: number;

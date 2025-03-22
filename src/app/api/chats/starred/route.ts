@@ -23,65 +23,62 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    // Create a result array for starred conversations
-    const starredSessions = [];
+    // Get the conversation IDs (which are trade session IDs)
+    const sessionIds = starredUserChats.map(chat => chat.conversationId);
 
-    // Process each starred session
-    for (const starredChat of starredUserChats) {
-      const sessionId = starredChat.conversationId;
+    // Get the trade sessions for these conversations
+    const tradeSessions = await db
+      .select()
+      .from(tradeSession)
+      .where(inArray(tradeSession.id, sessionIds));
       
-      // Get the trade session info
-      const tradeSessions = await db
-        .select()
-        .from(tradeSession)
-        .where(eq(tradeSession.id, sessionId));
-      
-      if (tradeSessions.length === 0) continue;
-      
-      const tradeSessionData = tradeSessions[0];
-      
-      // Check if the user is part of this trade session
-      const isVendor = tradeSessionData.vendor_id === userId;
-      const isCustomer = tradeSessionData.customer_id === userId;
-      
-      if (!isVendor && !isCustomer) continue;
-      
-      // Get the other participant's ID
-      const otherUserId = isVendor ? tradeSessionData.customer_id : tradeSessionData.vendor_id;
-      
-      // Get the latest message for this session
-      const latestMessages = await db
+    if (tradeSessions.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Build the conversations list
+    const conversations = [];
+    
+    for (const tradeData of tradeSessions) {
+      // Get the latest message for this trade session
+      const latestMessage = await db
         .select()
         .from(messages)
-        .where(eq(messages.session_id, sessionId))
+        .where(eq(messages.session_id, tradeData.id))
         .orderBy(desc(messages.createdAt))
         .limit(1);
+        
+      if (latestMessage.length === 0) continue;
       
-      if (latestMessages.length === 0) continue;
+      // Determine the other user in the conversation
+      const otherUserId = tradeData.vendor_id === userId 
+        ? tradeData.customer_id 
+        : tradeData.vendor_id;
       
-      const latestMessage = latestMessages[0];
-      
-      // Get user profile info
+      // Get profile info for the other user
       const [otherUserProfile, otherUser] = await Promise.all([
         db.select().from(userProfile).where(eq(userProfile.auth_id, otherUserId)),
         db.select().from(users).where(eq(users.id, otherUserId))
       ]);
       
-      // Count unread messages where the current user is the recipient
-      const unreadCount = await db
+      // Count unread messages
+      const unreadMessages = await db
         .select({ count: messages })
         .from(messages)
         .where(
           and(
-            eq(messages.session_id, sessionId),
+            eq(messages.session_id, tradeData.id),
             eq(messages.isRead, false),
-            isVendor ? eq(messages.fromVender, false) : eq(messages.fromVender, true)
+            // Messages from the other user that current user hasn't read
+            eq(messages.fromVender, tradeData.vendor_id === otherUserId)
           )
-        )
-        .limit(1);
+        );
+        
+      const unreadCount = unreadMessages.length;
       
-      starredSessions.push({
-        id: sessionId,
+      // Build conversation object
+      conversations.push({
+        id: tradeData.id,
         user: {
           id: otherUserId,
           name: otherUserProfile[0]?.username || otherUser[0]?.name || "Unknown",
@@ -89,14 +86,14 @@ export async function GET() {
           avatar: otherUserProfile[0]?.avatar || "/api/placeholder/40/40",
           status: "offline", // In a real app, this would come from a user status table
         },
-        lastMessage: latestMessage.content,
-        timestamp: formatTimestamp(latestMessage.createdAt),
-        unread: unreadCount[0]?.count || 0,
+        lastMessage: latestMessage[0].content,
+        timestamp: formatTimestamp(latestMessage[0].createdAt),
+        unread: unreadCount,
         starred: true, // All conversations here are starred by definition
       });
     }
 
-    return NextResponse.json(starredSessions);
+    return NextResponse.json(conversations);
   } catch (error) {
     console.error("Error fetching starred chats:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

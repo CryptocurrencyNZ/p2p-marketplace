@@ -43,7 +43,7 @@ export async function POST(
       .where(
         and(
           eq(messages.session_id, sessionId),
-          isVendor ? eq(messages.fromVender, false) : eq(messages.fromVender, true),
+          eq(messages.fromVender, true),
           eq(messages.isRead, false)
         )
       );

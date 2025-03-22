@@ -33,25 +33,15 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    
-    const tradeSessionRecord = tradeSessionRecords[0];
-    
-    // Check if user is part of this trade session
-    const isVendor = tradeSessionRecord.vendor_id === userId;
-    const isCustomer = tradeSessionRecord.customer_id === userId;
-    
-    if (!isVendor && !isCustomer) {
-      return NextResponse.json(
-        { error: "You are not authorized to send messages in this trade session" },
-        { status: 403 }
-      );
-    }
 
+    const tradeData = tradeSessionRecords[0];
+    const isVendor = tradeData.vendor_id === userId;
+    
     // Create the new message
     const newMessage = {
-      session_id: data.sessionId,
+      fromVender: isVendor,
       content: data.content,
-      fromVender: isVendor, // Set based on whether the sender is the vendor
+      session_id: data.sessionId,
       isRead: false,
     };
 
@@ -72,7 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: formattedMessage,
-      sessionId: insertedMessage.session_id,
+      conversationId: insertedMessage.session_id,
     });
   } catch (error) {
     console.error("Error sending message:", error);

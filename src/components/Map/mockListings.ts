@@ -1,114 +1,150 @@
-// mockListings.ts
-import { TradeListing } from "./types";
+// Add this interface for the backend response structure
+import { TradeListing, TradeType, NZRegion } from "./types";
+// Add this interface for the backend response structure
+export interface BackendListing {
+  id: string;
+  userId: string;
+  username: string;
+  createdAt: string;
+  title: string;
+  location: string;
+  price: string;
+  isBuy: boolean;
+  currency: string;
+  description: string;
+  marginRate: string;
+  onChainProof: boolean;
+}
 
-// Mock data for New Zealand locations
-export const mockListings: TradeListing[] = [
-  {
-    id: "1",
-    title: "Selling Bitcoin in Auckland CBD",
-    location: { 
-      lat: -36.8485, 
-      lng: 174.7633,
-      region: "Auckland",
-      city: "Auckland"
-    },
-    price: 82000,
-    currency: "NZD",
-    cryptoType: "BTC",
-    tradeType: "sell",
-    trader: { name: "CryptoKiwi", rating: 4.8, completedTrades: 143 },
-    description: "Trading in person at the central library. Cash only.",
-    createdAt: "2025-03-15T14:30:00Z",
-  },
-  {
-    id: "2",
-    title: "Ethereum for Cash in Wellington",
-    location: { 
-      lat: -41.2865, 
-      lng: 174.7762,
-      region: "Wellington",
-      city: "Wellington"
-    },
-    price: 3700,
-    currency: "NZD",
-    cryptoType: "ETH",
-    tradeType: "sell",
-    trader: { name: "WellyTrader", rating: 4.6, completedTrades: 87 },
-    description: "Meet at Cuba Street cafes. Min trade 0.5 ETH.",
-    createdAt: "2025-03-18T09:15:00Z",
-  },
-  {
-    id: "3",
-    title: "USDT trades in Christchurch",
-    location: { 
-      lat: -43.5321, 
-      lng: 172.6362,
-      region: "Canterbury",
-      city: "Christchurch"
-    },
-    price: 1.62,
-    currency: "NZD",
-    cryptoType: "USDT",
-    tradeType: "buy",
-    trader: {
-      name: "SouthIslandCrypto",
-      rating: 5.0,
-      completedTrades: 211,
-    },
-    description:
-      "Buying USDT with NZD. Flexible meeting locations around Christchurch.",
-    createdAt: "2025-03-19T16:45:00Z",
-  },
-  {
-    id: "4",
-    title: "Buying Solana in Hamilton",
-    location: { 
-      lat: -37.787, 
-      lng: 175.2793,
-      region: "Waikato",
-      city: "Hamilton"
-    },
-    price: 290,
-    currency: "NZD",
-    cryptoType: "SOL",
-    tradeType: "buy",
-    trader: { name: "HamTownMiner", rating: 4.2, completedTrades: 43 },
-    description: "Looking to buy SOL. Can meet anywhere in Hamilton area.",
-    createdAt: "2025-03-17T11:20:00Z",
-  },
-  {
-    id: "5",
-    title: "Sell BNB in Queenstown",
-    location: { 
-      lat: -45.0302, 
-      lng: 168.6612,
-      region: "Otago",
-      city: "Queenstown"
-    },
-    price: 930,
-    currency: "NZD",
-    cryptoType: "BNB",
-    tradeType: "sell",
-    trader: { name: "QTownCryptoGuru", rating: 4.9, completedTrades: 76 },
-    description: "Selling BNB at market price. Meet in public places only.",
-    createdAt: "2025-03-16T15:50:00Z",
-  },
-];
+// Location coordinates mapping for New Zealand regions
+const regionCoordinates: Record<string, { lat: number; lng: number }> = {
+  [NZRegion.Auckland]: { lat: -36.8509, lng: 174.7645 },
+  [NZRegion.Wellington]: { lat: -41.2865, lng: 174.7762 },
+  [NZRegion.Canterbury]: { lat: -43.5321, lng: 172.6362 },
+  [NZRegion.Otago]: { lat: -45.8788, lng: 170.5028 },
+  [NZRegion.Waikato]: { lat: -37.7870, lng: 175.2793 },
+  [NZRegion.BayOfPlenty]: { lat: -37.6878, lng: 176.1651 },
+  [NZRegion.ManawatuWhanganui]: { lat: -40.3523, lng: 175.6082 },
+  [NZRegion.Northland]: { lat: -35.7275, lng: 174.3166 },
+  [NZRegion.HawkesBay]: { lat: -39.4928, lng: 176.9120 },
+  [NZRegion.Taranaki]: { lat: -39.0556, lng: 174.0752 },
+  [NZRegion.Southland]: { lat: -46.4132, lng: 168.3538 },
+  [NZRegion.Nelson]: { lat: -41.2706, lng: 173.2840 },
+  [NZRegion.Marlborough]: { lat: -41.5134, lng: 173.9612 },
+  [NZRegion.Tasman]: { lat: -41.2706, lng: 172.9211 },
+  [NZRegion.WestCoast]: { lat: -42.4500, lng: 171.2100 },
+  [NZRegion.Gisborne]: { lat: -38.6624, lng: 177.9829 }
+};
 
-// Function to simulate API fetch with delay
+// City mapping for each region (simplified version)
+const regionToCityMap: Record<string, string> = {
+  [NZRegion.Auckland]: "Auckland",
+  [NZRegion.Wellington]: "Wellington",
+  [NZRegion.Canterbury]: "Christchurch",
+  [NZRegion.Otago]: "Dunedin",
+  [NZRegion.Waikato]: "Hamilton",
+  [NZRegion.BayOfPlenty]: "Tauranga",
+  [NZRegion.ManawatuWhanganui]: "Palmerston North",
+  [NZRegion.Northland]: "Whangarei",
+  [NZRegion.HawkesBay]: "Napier",
+  [NZRegion.Taranaki]: "New Plymouth",
+  [NZRegion.Southland]: "Invercargill",
+  [NZRegion.Nelson]: "Nelson",
+  [NZRegion.Marlborough]: "Blenheim",
+  [NZRegion.Tasman]: "Richmond",
+  [NZRegion.WestCoast]: "Greymouth",
+  [NZRegion.Gisborne]: "Gisborne"
+};
+
+// Rating generation based on margin rate (lower margin rate = higher rating)
+const calculateRating = (marginRate: string): number => {
+  const rate = parseFloat(marginRate);
+  if (rate <= 1) return 5.0;
+  if (rate <= 3) return 4.8;
+  if (rate <= 5) return 4.5;
+  if (rate <= 8) return 4.2;
+  if (rate <= 12) return 3.9;
+  return 3.5;
+};
+
+// Generate number of completed trades
+const generateCompletedTrades = (rating: number): number => {
+  const baseCount = Math.floor(rating * 20);
+  const randomFactor = Math.floor(Math.random() * 15);
+  return baseCount + randomFactor;
+};
+
 export const fetchMockListings = async (): Promise<TradeListing[]> => {
-  // Simulating API fetch delay
-  
-  const response = await fetch("/api/listings");
+  try {
+    // Fetch data from API
+    const response = await fetch("/api/listings");
     
-  if (!response.ok) {
-    throw new Error(`Error fetching listings: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching listings: ${response.status}`);
+    }
+    
+    const backendListings: BackendListing[] = await response.json();
+    console.log("Raw backend data:", backendListings);
+    
+    // Transform the data to match frontend requirements
+    const transformedListings: TradeListing[] = backendListings.map((item, index) => {
+      // Map backend location string to NZRegion enum value
+      const region = item.location as keyof typeof NZRegion;
+      
+      // Get base coordinates for the region
+      const baseCoordinates = regionCoordinates[region] || { lat: -41.0, lng: 174.0 }; // Default to NZ center
+      
+      // Create a random offset to scatter pins within the region
+      // This creates pins that are visibly distinct but still in the same general area
+      const latOffset = (Math.random() - 0.5) * 0.15; // Approx ±8km offset
+      const lngOffset = (Math.random() - 0.5) * 0.15;
+      
+      // Apply the offset to create unique coordinates for each listing
+      const coordinates = {
+        lat: baseCoordinates.lat + latOffset,
+        lng: baseCoordinates.lng + lngOffset
+      };
+      
+      const city = regionToCityMap[region] || String(region);
+      
+      // Calculate rating based on margin rate
+      const rating = calculateRating(item.marginRate);
+      
+      // Generate number of completed trades
+      const completedTrades = generateCompletedTrades(rating);
+      
+      // Create the transformed listing
+      const transformedListing: TradeListing = {
+        id: item.id,
+        title: item.title,
+        location: {
+          lat: coordinates.lat,
+          lng: coordinates.lng,
+          region: region,
+          city: city
+        },
+        price: parseFloat(item.price),
+        currency: "NZD", // Using NZD as the display currency
+        cryptoType: item.currency, // Using the currency field as cryptoType
+        tradeType: item.isBuy ? "buy" : "sell",
+        trader: {
+          id: item.userId,
+          name: item.username,
+          rating: rating,
+          completedTrades: completedTrades
+        },
+        description: item.description,
+        createdAt: item.createdAt
+      };
+      
+      return transformedListing;
+    });
+    
+    console.log("Transformed listings:", transformedListings);
+    return transformedListings;
+    
+  } catch (error) {
+    console.error("Error in fetchMockListings:", error);
+    throw error;
   }
-  
-  const rawData = await response.json();
-
-  console.log(rawData);
-
-
-  return mockListings;
 };

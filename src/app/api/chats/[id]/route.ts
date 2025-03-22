@@ -19,8 +19,14 @@ export async function GET(
     // First get the trade session to determine participants
     const tradeSessionRecords = await db
       .select()
-      .from(tradeSession)
-      .where(eq(tradeSession.id, sessionId));
+      .from(messages)
+      .where(
+        and(
+          eq(messages.session_id, sessionId),
+          or(eq(messages.fromVender, true), eq(messages.fromVender, false)),
+        ),
+      )
+      .limit(1);
 
     if (!tradeSessionRecords || tradeSessionRecords.length === 0) {
       return NextResponse.json(
@@ -29,23 +35,25 @@ export async function GET(
       );
     }
 
-    const tradeSessionData = tradeSessionRecords[0];
-    
-    // Check if the user is part of this trade session
-    const isVendor = tradeSessionData.vendor_id === userId;
-    const isCustomer = tradeSessionData.customer_id === userId;
-    
-    if (!isVendor && !isCustomer) {
+    const message = tradeSessionRecords[0];
+    // In this schema, we don't have sender/receiver IDs like that
+    // Instead use the trade session to identify parties
+    const tradeInfo = await db
+      .select()
+      .from(tradeSession)
+      .where(eq(tradeSession.id, message.session_id))
+      .limit(1);
+      
+    if (tradeInfo.length === 0) {
       return NextResponse.json(
-        { error: "You are not authorized to view this conversation" },
-        { status: 403 },
+        { error: "Trade session not found" },
+        { status: 404 },
       );
     }
     
-    // Get the other participant's ID
-    const otherUserId = isVendor ? tradeSessionData.customer_id : tradeSessionData.vendor_id;
+    const session = tradeInfo[0];
+    const otherUserId = session.vendor_id === userId ? session.customer_id : session.vendor_id;
 
-    // Check if the conversation is starred
     const starredCheck = await db
       .select()
       .from(starredChats)
@@ -73,11 +81,14 @@ export async function GET(
 
     // Format messages for client
     const formattedMessages = allMessages.map((msg) => {
-      const isFromMe = isVendor ? msg.fromVender : !msg.fromVender;
-      
+      // If the message is from vendor, check if current user is vendor
+      const isFromCurrentUser = 
+        (msg.fromVender && session.vendor_id === userId) || 
+        (!msg.fromVender && session.customer_id === userId);
+        
       return {
         id: msg.id,
-        sender: isFromMe ? "me" : "other",
+        sender: isFromCurrentUser ? "me" : "other",
         content: msg.content,
         timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
           hour: "2-digit",

@@ -137,7 +137,7 @@ export default function ProfilePage() {
     };
 
     fetchUserProfile();
-  }, []);
+  }, [userData.age]);
 
   // Handle profile update
   const handleSaveProfile = async (): Promise<void> => {

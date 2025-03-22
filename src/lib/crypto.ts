@@ -1,7 +1,7 @@
 // Define types
-export type CurrencyType = 'crypto' | 'fiat';
+type CurrencyType = 'crypto' | 'fiat';
 
-export interface Currency {
+interface Currency {
   id: string;
   name: string;
   symbol: string;

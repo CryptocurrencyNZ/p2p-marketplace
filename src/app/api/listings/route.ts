@@ -1,13 +1,11 @@
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { listings, userProfile } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 export const GET = async () => {
   try {
-    const list = await db
+    const allListings = await db
       .select({
         id: listings.id,
         userId: userProfile.id,
@@ -19,48 +17,15 @@ export const GET = async () => {
         isBuy: listings.isBuy,
         currency: listings.currency,
         description: listings.descrption,
+        marginRate: listings.marginRate,
         onChainProof: listings.onChainProof,
       })
       .from(listings)
       .innerJoin(userProfile, eq(userProfile.auth_id, listings.user_auth_id));
 
-    return NextResponse.json(list);
+    return NextResponse.json(allListings);
   } catch (error) {
-    console.error("Error fetching lists", error);
-    return NextResponse.json([]);
-  }
-};
-
-const AddListingInput = z.object({
-  title: z.string(),
-  location: z.string(),
-  price: z.number().transform((x) => String(x)),
-  isBuy: z.boolean(),
-  currency: z.string(),
-  crypto_type: z.string(),
-  descrption: z.string(),
-  onChainProof: z.boolean(),
-});
-
-export const POST = async (request: Request) => {
-  try {
-    const session = await auth();
-    if (!session || !session.user)
-      return NextResponse.json(
-        { message: "Not authenticated" },
-        { status: 401 },
-      );
-
-    const payload = await request.json();
-    const data = AddListingInput.parse(payload);
-
-    const newListing = { user_auth_id: session.user.id, ...data };
-
-    await db.insert(listings).values([newListing]);
-
-    return NextResponse.json(newListing);
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    console.error("Error fetching listings:", error);
+    return NextResponse.json({ error: "Failed to fetch listings" }, { status: 500 });
   }
 };

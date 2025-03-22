@@ -98,6 +98,17 @@ export const mockListings: TradeListing[] = [
 // Function to simulate API fetch with delay
 export const fetchMockListings = async (): Promise<TradeListing[]> => {
   // Simulating API fetch delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  
+  const response = await fetch("/api/listings");
+    
+  if (!response.ok) {
+    throw new Error(`Error fetching listings: ${response.status}`);
+  }
+  
+  const rawData = await response.json();
+
+  console.log(rawData);
+
+
   return mockListings;
 };

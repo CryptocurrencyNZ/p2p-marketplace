@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Search, 
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { NZ_REGIONS } from '@/components/Map/filters';
+import { SUPPORTED_CURRENCIES } from '@/lib/crypto';
 
 const CreateListingPage = () => {
   // Define the currency type
@@ -29,6 +30,17 @@ const CreateListingPage = () => {
     icon: React.ReactNode;
   };
 
+  // Define the price response type
+  type PriceResponse = {
+    id: string;
+    name: string;
+    symbol: string;
+    price_usd: number | null;
+    price_nzd: number;
+    nzd_rate?: number;
+    last_updated: string;
+  };
+
   // State for the form fields
   const [listingType, setListingType] = useState<'buy' | 'sell'>('sell');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,9 +49,16 @@ const CreateListingPage = () => {
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [showPaymentCurrencyDropdown, setShowPaymentCurrencyDropdown] = useState(false);
   const [amount, setAmount] = useState('');
+  const [marginRate, setMarginRate] = useState(0);
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [onChainProof, setOnChainProof] = useState(false);
+  
+  // New state for live price data
+  const [livePrice, setLivePrice] = useState<PriceResponse | null>(null);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   // List of popular cryptocurrencies and fiat options
   const currencyOptions: Currency[] = [
@@ -51,12 +70,56 @@ const CreateListingPage = () => {
     { id: 'sol', name: 'Solana', symbol: 'SOL', type: 'crypto', icon: <DollarSign size={20} /> },
     { id: 'ada', name: 'Cardano', symbol: 'ADA', type: 'crypto', icon: <DollarSign size={20} /> },
     { id: 'nzd', name: 'New Zealand Dollar', symbol: 'NZD', type: 'fiat', icon: <DollarSign size={20} /> },
-    { id: 'usd', name: 'US Dollar', symbol: 'USD', type: 'fiat', icon: <DollarSign size={20} /> },
-    { id: 'eur', name: 'Euro', symbol: 'EUR', type: 'fiat', icon: <DollarSign size={20} /> },
-    { id: 'gbp', name: 'British Pound', symbol: 'GBP', type: 'fiat', icon: <DollarSign size={20} /> },
-    { id: 'aud', name: 'Australian Dollar', symbol: 'AUD', type: 'fiat', icon: <DollarSign size={20} /> },
-    { id: 'jpy', name: 'Japanese Yen', symbol: 'JPY', type: 'fiat', icon: <DollarSign size={20} /> },
   ];
+
+  // Fetch live price data when currency changes
+  useEffect(() => {
+    async function fetchPriceData() {
+      if (!selectedCurrency) return;
+      
+      // Skip fetching for NZD as it's the base currency
+      if (selectedCurrency.symbol === 'NZD') {
+        setLivePrice({
+          id: selectedCurrency.id,
+          name: selectedCurrency.name,
+          symbol: selectedCurrency.symbol,
+          price_usd: null,
+          price_nzd: 1.0,
+          last_updated: new Date().toISOString()
+        });
+        return;
+      }
+      
+      try {
+        setIsLoadingPrice(true);
+        setPriceError(null);
+        
+        const response = await fetch(`/api/crypto-price?currency=${selectedCurrency.id}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch price data');
+        }
+        
+        const priceData = await response.json();
+        setLivePrice(priceData);
+      } catch (error) {
+        console.error('Error fetching price data:', error);
+        setPriceError(error instanceof Error ? error.message : 'Failed to fetch price data');
+        setLivePrice(null);
+      } finally {
+        setIsLoadingPrice(false);
+      }
+    }
+    
+    fetchPriceData();
+    
+    // Set up interval to refresh price data every 60 seconds
+    const intervalId = setInterval(fetchPriceData, 60000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, [selectedCurrency]);
 
   // Filter currencies based on search
   const filteredCurrencies = currencyOptions.filter(
@@ -74,6 +137,27 @@ const CreateListingPage = () => {
   const handleCurrencySelect = (currency: Currency) => {
     setSelectedCurrency(currency);
     setShowCurrencyDropdown(false);
+  };
+
+  // Calculate total amount with margin
+  const calculateTotalWithMargin = (): number => {
+    if (!amount) return 0;
+    const baseAmount = parseFloat(amount);
+    return baseAmount + (baseAmount * marginRate) / 100;
+  };
+
+  // Calculate value in NZD
+  const calculateNZDValue = (): number => {
+    if (!amount || !livePrice) return 0;
+    const baseAmount = parseFloat(amount);
+    return baseAmount * livePrice.price_nzd;
+  };
+
+  // Calculate margin amount
+  const calculateMarginAmount = (): number => {
+    if (!amount) return 0;
+    const baseAmount = parseFloat(amount);
+    return (baseAmount * marginRate) / 100;
   };
 
   // Handle form submission
@@ -104,13 +188,14 @@ const CreateListingPage = () => {
         currency: selectedCurrency.symbol,
         crypto_type: selectedCurrency.symbol, // Ensure this field is included
         descrption: description, // Note: This matches the typo in your API schema
-        onChainProof: false
+        onChainProof: onChainProof,
+        marginRate: marginRate
       };
       
       console.log("Submitting payload:", payload);
       
       // Make API call
-      const response = await fetch('/api/listings', {
+      const response = await fetch('/api/listings/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,6 +236,20 @@ const CreateListingPage = () => {
     crypto: filteredPaymentCurrencies.filter((c) => c.type === 'crypto'),
     fiat: filteredPaymentCurrencies.filter((c) => c.type === 'fiat'),
   };
+
+  // Format a number with proper decimal places based on currency type
+  const formatAmount = (value: number, currencySymbol: string | undefined): string => {
+    if (!currencySymbol) return value.toString();
+    
+    // Fiat currencies typically use 2 decimal places
+    if (currencySymbol === 'NZD') {
+      return value.toFixed(2);
+    }
+    
+    // Crypto usually displays more decimal places
+    return value.toFixed(8);
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
@@ -404,6 +503,137 @@ const CreateListingPage = () => {
               </p>
             )}
           </div>
+
+{/* Margin Rate Input */}
+<div className="space-y-2">
+  <label className="block text-sm font-medium text-gray-300">
+    Margin Rate
+  </label>
+  <div className="relative">
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      value={marginRate}
+      onChange={(e) => {
+        const value = parseFloat(e.target.value);
+        setMarginRate(isNaN(value) ? 0 : value);
+      }}
+      placeholder="0.00"
+      className="w-full bg-gray-700 border border-gray-600 rounded-lg text-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+      // This CSS completely removes the incrementors on all browsers
+      style={{ 
+        WebkitAppearance: "none", 
+        MozAppearance: "textfield",
+        appearance: "textfield"
+      }}
+    />
+    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
+      %
+    </div>
+  </div>
+</div>
+  
+  {/* Visual Equation Display */}
+  {amount && marginRate ? (
+    <div className="mt-2 p-3 bg-gray-800/70 backdrop-blur-sm border border-gray-700 rounded-lg">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-300">Base Amount:</span>
+        <span className="text-sm font-medium text-white">{amount} {selectedCurrency?.symbol || ''}</span>
+      </div>
+    <div className="flex items-center justify-between mt-1">
+        <span className="text-sm text-gray-300">Margin ({marginRate}%):</span>
+        <span className="text-sm font-medium text-green-400">
+            {((parseFloat(amount) * (marginRate)) / 100).toFixed(8).toString()} {selectedCurrency?.symbol || ''}
+        </span>
+    </div>
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-700">
+        <span className="text-sm font-medium text-gray-300">Total:</span>
+        <span className="text-sm font-medium text-green-400">
+          {(parseFloat(amount) + (parseFloat(amount) * (marginRate)) / 100).toFixed(8)} {selectedCurrency?.symbol || ''}
+        </span>
+      </div>
+    </div>
+  ) : (
+    <p className="text-xs text-gray-400">
+      Set margin percentage to calculate final amount
+    </p>
+  )}
+
+
+{/* Add current NZD value display when we have price data */}
+{(livePrice && selectedCurrency) && (
+  <>
+    <div className="mt-2 pt-2 border-t border-gray-700">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-300">Current Price:</span>
+        <span className="text-sm font-medium text-white">
+          1 {selectedCurrency.symbol} = {formatAmount(livePrice.price_nzd, 'NZD')} NZD
+        </span>
+      </div>
+      <div className="flex items-center justify-between mt-1">
+        <span className="text-sm text-gray-300">Value in NZD:</span>
+        <span className="text-sm font-medium text-green-400">
+          {formatAmount(calculateNZDValue(), 'NZD')} NZD
+        </span>
+      </div>
+      <div className="flex items-center justify-between mt-1">
+        <span className="text-sm text-gray-300">Total with Margin:</span>
+        <span className="text-sm font-medium text-green-400">
+          {formatAmount(calculateTotalWithMargin() * livePrice.price_nzd, 'NZD')} NZD
+        </span>
+      </div>
+      <div className="text-xs text-gray-400 mt-1 text-right">
+        Last updated: {new Date(livePrice.last_updated).toLocaleTimeString()}
+      </div>
+    </div>
+  </>
+)}
+
+{/* On-Chain Proof Section */}
+<div className="space-y-2">
+  <div className="flex items-center justify-between">
+    <label className="block text-sm font-medium text-gray-300">
+      On-Chain Proof
+    </label>
+    <div className="relative inline-block w-10 mr-2 align-middle select-none">
+      <input 
+        type="checkbox" 
+        id="onChainProof" 
+        name="onChainProof" 
+        checked={onChainProof}
+        onChange={(e) => setOnChainProof(e.target.checked)}
+        className="opacity-0 absolute block w-6 h-6 rounded-full bg-white border-4 cursor-pointer"
+      />
+      <label 
+        htmlFor="onChainProof" 
+        className={`block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer ${onChainProof ? 'bg-green-500' : ''}`}
+      >
+        <span className={`block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-300 ${onChainProof ? 'translate-x-4' : ''}`}></span>
+      </label>
+    </div>
+  </div>
+  
+  <div className="bg-gray-800/70 backdrop-blur-sm border border-gray-700 rounded-lg p-3">
+    <div className="flex items-start">
+      <div className="flex-shrink-0 mt-0.5">
+        <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div className="ml-3">
+        <p className="text-sm text-gray-300">
+          On-Chain Proof creates an escrow contract that locks your funds on the blockchain, verifying to buyers that you own the cryptocurrency you're selling. This increases trust without requiring you to send funds first.
+        </p>
+        {onChainProof && (
+          <p className="mt-2 text-sm text-green-400">
+            Your listing will show a verified badge, indicating funds are secured on-chain.
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
 
           {/* Description */}
           <div className="space-y-2">

@@ -49,6 +49,27 @@ export default function Navbar() {
         active={isActive("/dashboard/profile")}
         label="Profile"
       />
+      <NavItem
+        href="https://docs.google.com/document/d/1X-uiIvwA5mUeR9a5aYzNZiagbiYOuoK2zwUBUh7fXJs/edit?usp=sharing"
+        icon={
+          <div className="flex bg-green-600">
+            <a
+              href="https://docs.google.com/document/d/1X-uiIvwA5mUeR9a5aYzNZiagbiYOuoK2zwUBUh7fXJs/edit?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-green-600 text-white font-medium text-sm rounded-lg shadow-lg transition-all duration-300 hover:bg-green-700 hover:shadow-xl flex items-center justify-center border border-green-400 shadow-green-200"
+              style={{
+                boxShadow:
+                  "0 0 10px rgba(74, 222, 128, 0.5), 0 0 20px rgba(74, 222, 128, 0.3)",
+              }}
+            >
+              View our scam guide
+            </a>
+          </div>
+        }
+        active={false}
+        label="View our scam guide"
+      />
     </div>
   );
 
@@ -109,6 +130,23 @@ export default function Navbar() {
           label="Profile"
           sidebar
         />
+
+        <Link
+          href="https://docs.google.com/document/d/1X-uiIvwA5mUeR9a5aYzNZiagbiYOuoK2zwUBUh7fXJs/edit?usp=sharing"
+          target="_blank"
+          className="hidden lg:flex items-center justify-center my-8"
+        >
+          <div
+            className="bg-green-600 w-max rounded-lg px-4 py-2 flex items-center justify-center gap-2 border border-green-400 text-white text-sm shadow-lg hover:bg-green-700 transition-all duration-300"
+            style={{
+              boxShadow:
+                "0 0 8px rgba(74, 222, 128, 0.6), 0 0 16px rgba(74, 222, 128, 0.3)",
+            }}
+          >
+            <span>📜</span>
+            <span>View our scam guide</span>
+          </div>
+        </Link>
       </div>
 
       {/* Additional options at bottom */}

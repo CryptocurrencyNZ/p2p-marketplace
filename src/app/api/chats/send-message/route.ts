@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       const existingMessages = await db
         .select()
         .from(messages)
-        .where(eq(messages.conversationID, conversationId))
+        .where(eq(messages.session_id, conversationId))
         .limit(1);
       
       if (existingMessages.length === 0) {
@@ -64,17 +64,14 @@ export async function POST(request: NextRequest) {
 
       // Determine the receiver based on the existing message
       const existingMessage = existingMessages[0];
-      receiverId = existingMessage.senderId === senderId 
-        ? existingMessage.receiverId 
-        : existingMessage.senderId;
+      receiverId = existingMessage.fromVender ? existingMessage.session_id : session.user.id;
     }
 
     // Now we can safely insert the new message
     const newMessage = {
-      senderId,
-      receiverId: receiverId!,  // We've ensured this is defined by now
+      fromVender: false,
       content: data.content,
-      conversationID: conversationId!,  // We've ensured this is defined by now
+      session_id: conversationId!,
       isRead: false,
     };
 
@@ -95,7 +92,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: formattedMessage,
-      conversationId: insertedMessage.conversationID,
+      conversationId: insertedMessage.session_id,
     });
   } catch (error) {
     console.error("Error sending message:", error);

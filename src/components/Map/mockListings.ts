@@ -128,6 +128,7 @@ export const fetchMockListings = async (): Promise<TradeListing[]> => {
         cryptoType: item.currency, // Using the currency field as cryptoType
         tradeType: item.isBuy ? "buy" : "sell",
         trader: {
+          id: item.userId,
           name: item.username,
           rating: rating,
           completedTrades: completedTrades

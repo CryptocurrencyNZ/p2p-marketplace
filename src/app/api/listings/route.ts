@@ -8,7 +8,7 @@ export const GET = async () => {
     const allListings = await db
       .select({
         id: listings.id,
-        userId: userProfile.id,
+        userId: userProfile.auth_id,
         username: userProfile.username,
         createdAt: listings.createdAt,
         title: listings.title,

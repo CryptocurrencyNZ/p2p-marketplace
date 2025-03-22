@@ -22,8 +22,8 @@ export async function POST(
       .set({ isRead: true })
       .where(
         and(
-          eq(messages.conversationID, conversationId),
-          eq(messages.receiverId, userId),
+          eq(messages.session_id, conversationId),
+          eq(messages.fromVender, true),
           eq(messages.isRead, false)
         )
       );

@@ -383,7 +383,7 @@ const OnboardingFlow: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-white relative">
       {/* Background elements */}
-      <div className="absolute inset-0 bg-[url('/CNZ_logo.png')] bg-cover opacity-10"></div>
+      <div className="fixed w-screen inset-0 bg-[url('/profile_background.png')] bg-cover opacity-80 scale-150 overflow-hidden"></div>
 
       <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-green-500/20 blur-3xl"></div>
       <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-green-500/10 blur-3xl"></div>

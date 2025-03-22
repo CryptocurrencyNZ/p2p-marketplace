@@ -1,45 +1,46 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { users, messages, userProfile, starredChats, tradeSession } from "@/db/schema";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET handler to fetch all chats for the current user
+// GET handler to fetch all starred chats for the current user
 export async function GET() {
   const session = await auth();
   if (!session || !session.user || !session.user.id)
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
 
   try {
-    // Find all trade sessions where the current user is either the vendor or customer
     const userId = session.user.id;
-    
-    // Get all trade sessions involving this user
-    const userSessions = await db
-      .select()
-      .from(tradeSession)
-      .where(or(eq(tradeSession.vendor_id, userId), eq(tradeSession.customer_id, userId)));
-    
-    if (userSessions.length === 0) {
-      return NextResponse.json([]);
-    }
-    
+
     // Get all starred conversations for this user
     const starredUserChats = await db
       .select()
       .from(starredChats)
       .where(eq(starredChats.userId, userId));
 
-    // Create a set of starred conversation IDs for quick lookup
-    const starredConversationIds = new Set(
-      starredUserChats.map(chat => chat.conversationId)
-    );
+    if (starredUserChats.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Get the conversation IDs (which are trade session IDs)
+    const sessionIds = starredUserChats.map(chat => chat.conversationId);
+
+    // Get the trade sessions for these conversations
+    const tradeSessions = await db
+      .select()
+      .from(tradeSession)
+      .where(inArray(tradeSession.id, sessionIds));
+      
+    if (tradeSessions.length === 0) {
+      return NextResponse.json([]);
+    }
 
     // Build the conversations list
     const conversations = [];
     
-    for (const tradeData of userSessions) {
-      // For each trade session, get the latest message
+    for (const tradeData of tradeSessions) {
+      // Get the latest message for this trade session
       const latestMessage = await db
         .select()
         .from(messages)
@@ -88,13 +89,13 @@ export async function GET() {
         lastMessage: latestMessage[0].content,
         timestamp: formatTimestamp(latestMessage[0].createdAt),
         unread: unreadCount,
-        starred: starredConversationIds.has(tradeData.id),
+        starred: true, // All conversations here are starred by definition
       });
     }
 
     return NextResponse.json(conversations);
   } catch (error) {
-    console.error("Error fetching chats:", error);
+    console.error("Error fetching starred chats:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@ import { ethers, Signer, ContractTransactionResponse } from "ethers";
 import { ESCROW_ABI, ESCROW_ADDRESS } from "@/constants";
 import { Banknote, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
 
-// Define types for component props
+// this component is to mark the seller has released the funds (Step 2)
 interface MarkFiatSentProps {
   signer: Signer | null;
 }
@@ -15,6 +15,7 @@ type StatusType = {
 };
 
 function MarkFiatSent({ signer }: MarkFiatSentProps): React.ReactElement {
+  // we should dynamically pass the tradeID into this (needs to stay the same through the flow)
   const [tradeId, setTradeId] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<StatusType>({ type: "", message: "" });

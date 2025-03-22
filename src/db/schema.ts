@@ -4,6 +4,7 @@ import {
   text,
   primaryKey,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -61,4 +62,21 @@ export const userProfile = pgTable("userProfiles", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   bio: text("bio"),
   avatar: text("avatar"),
+});
+
+// Chat schema - single table approach
+export const messages = pgTable("messages", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  senderId: text("sender_id")
+    .notNull()
+    .references(() => users.id),
+  receiverId: text("receiver_id")
+    .notNull()
+    .references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  isRead: boolean("is_read").notNull().default(false),
+  conversationID: text("conversation_id"),
 });

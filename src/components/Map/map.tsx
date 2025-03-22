@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { TradeListing } from "./types"
+import { TradeListing } from "./types";
 
 interface P2PCryptoTradeMapProps {
   listings: TradeListing[];

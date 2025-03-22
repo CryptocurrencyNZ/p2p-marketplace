@@ -72,7 +72,7 @@ export const tradeSession = pgTable("trade_session", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  listingId: text("linting_id")
+  listingId: text("listing_id")
     .notNull()
     .references(() => listings.id),
   vendor_id: text("receiver_id")
@@ -84,8 +84,8 @@ export const tradeSession = pgTable("trade_session", {
   onChain: boolean("onchain").notNull(),
   vendor_start: boolean("vendor_start").default(false),
   customer_start: boolean("customer_start").default(false),
-  vendor_wallet: text("vendor_start"),
-  customer_wallet: text("customer_start"),
+  vendor_wallet: text("vendor_wallet"),
+  customer_wallet: text("customer_wallet"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   vendor_complete: numeric("vendor_complete"),
   customer_complete: numeric("customer_complete"),
@@ -130,7 +130,7 @@ export const listings = pgTable("listings", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  user_auth_id: text("user_auth_id").unique(),
+  user_auth_id: text("user_auth_id"),
   createdAt: timestamp("created_at").defaultNow(),
   title: text("title").notNull(),
   location: text("location").notNull(),

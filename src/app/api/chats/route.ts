@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { users, messages, userProfile, starredChats } from "@/db/schema";
-import { and, desc, eq, or } from "drizzle-orm";
+import { users, messages, userProfile, starredChats, tradeSession } from "@/db/schema";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET handler to fetch all chats for the current user
@@ -11,20 +11,22 @@ export async function GET() {
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
 
   try {
-    // Find all messages where the current user is either the sender or receiver
     const userId = session.user.id;
-    const userChats = await db
-      .select({
-        id: messages.conversationID,
-        senderId: messages.senderId,
-        receiverId: messages.receiverId,
-        content: messages.content,
-        createdAt: messages.createdAt,
-        isRead: messages.isRead,
-      })
-      .from(messages)
-      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
-      .orderBy(desc(messages.createdAt));
+
+    // Get all trade sessions where the user is either vendor or customer
+    const tradeSessions = await db
+      .select()
+      .from(tradeSession)
+      .where(
+        or(
+          eq(tradeSession.vendor_id, userId),
+          eq(tradeSession.customer_id, userId)
+        )
+      );
+      
+    if (tradeSessions.length === 0) {
+      return NextResponse.json([]);
+    }
 
     // Get all starred conversations for this user
     const starredUserChats = await db
@@ -33,56 +35,66 @@ export async function GET() {
       .where(eq(starredChats.userId, userId));
 
     // Create a set of starred conversation IDs for quick lookup
-    const starredConversationIds = new Set(
-      starredUserChats.map(chat => chat.conversationId)
-    );
+    const starredConversationIds = new Set(starredUserChats.map(chat => chat.conversationId));
 
-    // Group messages by conversation
-    const conversationsMap = new Map();
+    // Build the conversations list
+    const conversations = [];
     
-    for (const message of userChats) {
-      const conversationId = message.id;
-      
-      // Skip messages without a conversation ID
-      if (!conversationId) continue;
-      
-      const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
-
-      if (!conversationsMap.has(conversationId)) {
-        // Get other user profile
-        const otherUserProfile = await db
-          .select()
-          .from(userProfile)
-          .where(eq(userProfile.auth_id, otherUserId));
+    for (const tradeData of tradeSessions) {
+      // Get the latest message for this trade session
+      const latestMessage = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.session_id, tradeData.id))
+        .orderBy(desc(messages.createdAt))
+        .limit(1);
         
-        const otherUser = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, otherUserId));
-
-        conversationsMap.set(conversationId, {
-          id: conversationId,
-          user: {
-            id: otherUserId,
-            name: otherUserProfile[0]?.username || otherUser[0]?.name || "Unknown",
-            address: otherUserId.substring(0, 6) + "..." + otherUserId.substring(otherUserId.length - 4),
-            avatar: otherUserProfile[0]?.avatar || "/api/placeholder/40/40",
-            status: "offline", // In a real app, this would come from a user status table
-          },
-          lastMessage: message.content,
-          timestamp: formatTimestamp(message.createdAt),
-          unread: 0,
-          starred: starredConversationIds.has(conversationId),
-        });
-      }
-
+      if (latestMessage.length === 0) continue;
+      
+      // Determine the other user in the conversation
+      const otherUserId = tradeData.vendor_id === userId 
+        ? tradeData.customer_id 
+        : tradeData.vendor_id;
+      
+      // Get profile info for the other user
+      const [otherUserProfile, otherUser] = await Promise.all([
+        db.select().from(userProfile).where(eq(userProfile.auth_id, otherUserId)),
+        db.select().from(users).where(eq(users.id, otherUserId))
+      ]);
+      
       // Count unread messages
-      if (message.receiverId === userId && !message.isRead) {
-        conversationsMap.get(conversationId).unread += 1;
-      }
+      const unreadMessages = await db
+        .select({ count: messages })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.session_id, tradeData.id),
+            eq(messages.isRead, false),
+            // Messages from the other user that current user hasn't read
+            eq(messages.fromVender, tradeData.vendor_id === otherUserId)
+          )
+        );
+        
+      const unreadCount = unreadMessages.length;
+      
+      // Build conversation object
+      conversations.push({
+        id: tradeData.id,
+        user: {
+          id: otherUserId,
+          name: otherUserProfile[0]?.username || otherUser[0]?.name || "Unknown",
+          address: otherUserId.substring(0, 6) + "..." + otherUserId.substring(otherUserId.length - 4),
+          avatar: otherUserProfile[0]?.avatar || "/api/placeholder/40/40",
+          status: "offline", // In a real app, this would come from a user status table
+        },
+        lastMessage: latestMessage[0].content,
+        timestamp: formatTimestamp(latestMessage[0].createdAt),
+        unread: unreadCount,
+        starred: starredConversationIds.has(tradeData.id), // Check if this conversation is starred
+      });
     }
 
-    return NextResponse.json(Array.from(conversationsMap.values()));
+    return NextResponse.json(conversations);
   } catch (error) {
     console.error("Error fetching chats:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

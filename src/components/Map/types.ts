@@ -15,6 +15,7 @@ export interface TradeListing {
   cryptoType: string;
   tradeType: "buy" | "sell"; // Added trade type to identify buying or selling listings
   trader: {
+    id: string;
     name: string;
     rating: number;
     completedTrades: number;

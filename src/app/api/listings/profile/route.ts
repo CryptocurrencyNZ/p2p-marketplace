@@ -6,11 +6,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 export const GET = async () => {
+  const session = await auth();
+  if (!session || !session.user)
+    return NextResponse.json(
+      { message: "Not authenticated" },
+      { status: 401 },
+    );
+    
+  if (!session.user.id) {
+    return NextResponse.json(
+      { message: "User ID not found" },
+      { status: 400 },
+    );
+  }
+    
   try {
     const list = await db
       .select({
         id: listings.id,
-        userId: userProfile.id,
+        userId: userProfile.auth_id,
         username: userProfile.username,
         createdAt: listings.createdAt,
         title: listings.title,
@@ -23,6 +37,7 @@ export const GET = async () => {
         marginRate: listings.marginRate,
       })
       .from(listings)
+      .where(eq(listings.user_auth_id, session.user.id))
       .innerJoin(userProfile, eq(userProfile.auth_id, listings.user_auth_id));
 
     return NextResponse.json(list);
@@ -38,10 +53,9 @@ const AddListingInput = z.object({
   price: z.number().transform((x) => String(x)),
   isBuy: z.boolean(),
   currency: z.string(),
-  crypto_type: z.string(),
   descrption: z.string(),
   onChainProof: z.boolean(),
-  marginRate: z.number(),
+  marginRate: z.number().transform((x) => String(x)),
 });
 
 export const POST = async (request: Request) => {
@@ -58,7 +72,7 @@ export const POST = async (request: Request) => {
 
     const newListing = { user_auth_id: session.user.id, ...data };
 
-    await db.insert(listings).values([newListing]);
+    await db.insert(listings).values(newListing);
 
     return NextResponse.json(newListing);
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -19,6 +19,11 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
+
+// Polling configuration
+const POLLING_INTERVAL = 3000; // 3 seconds
+const MAX_RETRY_COUNT = 3;
+const RETRY_DELAY = 2000; // 2 seconds
 
 interface Message {
   id: string;
@@ -57,6 +62,9 @@ const ChatRoom = () => {
   // References
   const messageInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
+  const lastMessageIdRef = useRef<string | null>(null);
 
   // State for chat data
   const [currentChat, setCurrentChat] = useState<ChatData | null>(null);
@@ -64,37 +72,149 @@ const ChatRoom = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isPollingPaused, setIsPollingPaused] = useState(false);
 
   // Fetch chat data from API
-  useEffect(() => {
-    const fetchChatData = async () => {
-      try {
+  const fetchChatData = useCallback(async (isPolling = false) => {
+    try {
+      if (!isPolling) {
         setLoading(true);
-        
-        const response = await fetch(`/api/chats/${chatId}`);
+      }
+      
+      // For polling requests, use a query parameter to only fetch new messages
+      const queryParam = isPolling && lastMessageIdRef.current 
+        ? `?since=${lastMessageIdRef.current}` 
+        : '';
+      
+      const response = await fetch(`/api/chats/${chatId}${queryParam}`);
 
-        if (!response.ok) {
-          throw new Error(response.status === 404 
-            ? "Chat not found" 
-            : "Failed to fetch chat data");
+      if (!response.ok) {
+        throw new Error(response.status === 404 
+          ? "Chat not found" 
+          : "Failed to fetch chat data");
+      }
+
+      const data = await response.json();
+      
+      if (isPolling) {
+        // If polling, we only want to append new messages if any
+        if (data.messages && data.messages.length > 0) {
+          setMessages(prevMessages => {
+            // Create a Set of existing message IDs for faster lookup
+            const existingIds = new Set(prevMessages.map(msg => msg.id));
+            // Filter out messages we already have
+            const newMessages = data.messages.filter((msg: Message) => !existingIds.has(msg.id));
+            
+            if (newMessages.length > 0) {
+              // Update last message ID reference
+              lastMessageIdRef.current = newMessages[newMessages.length - 1].id;
+              // Return combined messages
+              return [...prevMessages, ...newMessages];
+            }
+            
+            return prevMessages;
+          });
         }
-
-        const data = await response.json();
+        // Update other chat data that might have changed
+        setCurrentChat(prevChat => {
+          if (!prevChat) return data;
+          return {
+            ...prevChat,
+            starred: data.starred,
+            user: {
+              ...prevChat.user,
+              status: data.user.status
+            }
+          };
+        });
+      } else {
+        // Initial load - set all data
         setCurrentChat(data);
         setMessages(data.messages || []);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching chat data:", err);
+        
+        // Set the last message ID for future polling
+        if (data.messages && data.messages.length > 0) {
+          lastMessageIdRef.current = data.messages[data.messages.length - 1].id;
+        }
+      }
+      
+      setError(null);
+      retryCountRef.current = 0; // Reset retry counter on success
+    } catch (err) {
+      console.error("Error fetching chat data:", err);
+      
+      if (isPolling) {
+        retryCountRef.current += 1;
+        if (retryCountRef.current > MAX_RETRY_COUNT) {
+          // Pause polling after max retries
+          setIsPollingPaused(true);
+          console.error(`Polling paused after ${MAX_RETRY_COUNT} failed attempts`);
+          // Try to resume after some time
+          setTimeout(() => {
+            setIsPollingPaused(false);
+            retryCountRef.current = 0;
+          }, RETRY_DELAY * 2);
+        }
+      } else {
         setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
+      }
+    } finally {
+      if (!isPolling) {
         setLoading(false);
       }
-    };
+    }
+  }, [chatId]);
 
+  // Initial data fetch
+  useEffect(() => {
     if (chatId) {
       fetchChatData();
     }
-  }, [chatId]);
+  }, [chatId, fetchChatData]);
+
+  // Setup polling for new messages
+  useEffect(() => {
+    // Start polling when chat is loaded and not paused
+    if (chatId && !loading && !isPollingPaused) {
+      // Clear any existing interval
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+      
+      // Start new polling interval
+      pollingRef.current = setInterval(() => {
+        fetchChatData(true);
+      }, POLLING_INTERVAL);
+    }
+    
+    // Cleanup function to clear interval when component unmounts or dependencies change
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [chatId, loading, isPollingPaused, fetchChatData]);
+
+  // Pause polling when tab is not visible to save resources
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // Pause polling when tab is not visible
+        setIsPollingPaused(true);
+      } else {
+        // Resume polling and immediately fetch to get updates
+        setIsPollingPaused(false);
+        fetchChatData(true);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchChatData]);
 
   // Auto scroll to bottom when new messages arrive or on initial load
   useEffect(() => {
@@ -177,6 +297,9 @@ const ChatRoom = () => {
       setMessages((prev) =>
         prev.map((msg) => (msg.id === tempId ? data.message : msg)),
       );
+      
+      // Update the last message ID reference
+      lastMessageIdRef.current = data.message.id;
     } catch (err) {
       console.error("Error sending message:", err);
 

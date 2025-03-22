@@ -1,11 +1,13 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import LoadingBar from "react-top-loading-bar";
 import { usePathname } from "next/navigation";
 
+
 export default function LoadingBarComponent({ 
   color = "#00ff00" // Default to glowing green
+
 }) {
   const [progress, setProgress] = useState(0);
   const pathname = usePathname();

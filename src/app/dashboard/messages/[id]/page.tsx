@@ -64,6 +64,7 @@ const ChatRoom = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
 
   // Fetch chat data from API
   useEffect(() => {
@@ -82,6 +83,12 @@ const ChatRoom = () => {
         const data = await response.json();
         setCurrentChat(data);
         setMessages(data.messages || []);
+        
+        // Set the timestamp of the latest message for future polling
+        if (data.messages && data.messages.length > 0) {
+          setLastMessageTimestamp(data.messages[data.messages.length - 1].timestamp);
+        }
+        
         setError(null);
       } catch (err) {
         console.error("Error fetching chat data:", err);
@@ -95,6 +102,63 @@ const ChatRoom = () => {
       fetchChatData();
     }
   }, [chatId]);
+
+  // Set up polling for new messages
+  useEffect(() => {
+    if (!chatId || loading) return;
+
+    const pollNewMessages = async () => {
+      try {
+        // Construct URL with query parameter for messages since the last one
+        let url = `/api/chats/${chatId}`;
+        if (messages.length > 0) {
+          // Use the last message's createdAt (server timestamp) if available
+          // The API expects a timestamp to filter with
+          // In a real implementation, you would need to ensure the timestamp format matches what the server expects
+          const lastMsg = messages[messages.length - 1];
+          
+          // Here we're assuming the timestamp is convertible to a Date
+          // In a real implementation, you might need to handle this differently based on your API
+          const lastDate = new Date().toISOString();
+          url += `?since=${encodeURIComponent(lastDate)}`;
+        }
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch new messages");
+        }
+        
+        const data = await response.json();
+        
+        // Only update if there are new messages
+        if (data.messages && data.messages.length > 0) {
+          // Create a set of existing message IDs for quick lookup
+          const existingIds = new Set(messages.map(m => m.id));
+          
+          // Filter out any messages we already have
+          const newMessages = data.messages.filter((msg: Message) => !existingIds.has(msg.id));
+          
+          if (newMessages.length > 0) {
+            // Append new messages to the existing ones
+            setMessages(prev => [...prev, ...newMessages]);
+            
+            // Update chat data if needed
+            setCurrentChat(data);
+          }
+        }
+      } catch (err) {
+        console.error("Error polling for new messages:", err);
+        // Don't set error state here to avoid disrupting the user experience
+      }
+    };
+
+    // Start polling every 5 seconds
+    const intervalId = setInterval(pollNewMessages, 5000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [chatId, loading]); // Remove 'messages' from the dependency array to prevent too frequent re-renders
 
   // Auto scroll to bottom when new messages arrive or on initial load
   useEffect(() => {

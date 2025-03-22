@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { users, messages, userProfile, starredChats } from "@/db/schema";
-import { and, asc, eq, or } from "drizzle-orm";
+import { and, asc, eq, gt, or, SQL } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -15,6 +15,9 @@ export async function GET(
   const { id: conversationId } = await params;
   const url = new URL(request.url);
   const userId = session.user.id;
+  
+  // Get the 'since' parameter if it exists
+  const sinceParam = url.searchParams.get('since');
 
   try {
     // Verify user is part of this conversation
@@ -63,11 +66,24 @@ export async function GET(
       .where(eq(users.id, otherUserId));
 
     // Get all messages in the conversation
-    const allMessages = await db
+    let allMessages = await db
       .select()
       .from(messages)
       .where(eq(messages.conversationID, conversationId))
       .orderBy(asc(messages.createdAt));
+    
+    // If 'since' parameter exists, filter messages after that timestamp
+    if (sinceParam) {
+      const sinceTimestamp = new Date(sinceParam);
+      
+      if (!isNaN(sinceTimestamp.getTime())) {
+        // If valid timestamp, filter the messages in memory
+        // This simplifies the query and avoids SQL typing issues
+        allMessages = allMessages.filter(msg => 
+          new Date(msg.createdAt) > sinceTimestamp
+        );
+      }
+    }
 
     // Format messages for client
     const formattedMessages = allMessages.map((msg) => ({

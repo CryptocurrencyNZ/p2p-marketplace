@@ -33,9 +33,9 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   
   // Debug flag - set to true to enable console logs
-  const debug = true;
+  const debug = false;
 
-  // Function to add markers to the map
+  // Move addMarkersToMap to useCallback to avoid re-creating it on every render
   const addMarkersToMap = useCallback((map: any, tradeListings: TradeListing[]) => {
     if (!map || !tradeListings.length) {
       if (debug) console.log("Map or listings not available");
@@ -71,107 +71,163 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
       // Set color based on trade type (buy/sell)
       const markerColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444"; // Green for buy, red for sell
       
-      el.style.backgroundColor = markerColor;
-      el.style.width = "25px";
-      el.style.height = "25px";
+      // Style the marker div
+      el.style.width = "40px";
+      el.style.height = "40px";
       el.style.borderRadius = "50%";
+      el.style.backgroundColor = markerColor;
+      el.style.display = "flex";
+      el.style.justifyContent = "center";
+      el.style.alignItems = "center";
       el.style.border = "2px solid white";
       el.style.cursor = "pointer";
       el.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
+      
+      // Add the SVG icons based on trade type
+      if (listing.tradeType === "buy") {
+        // Buy icon (arrow down)
+        el.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14"/>
+            <path d="m19 12-7 7-7-7"/>
+          </svg>
+        `;
+      } else {
+        // Sell icon (arrow up)
+        el.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m5 12 7-7 7 7"/>
+            <path d="M12 19V5"/>
+          </svg>
+        `;
+      }
 
-// Create popup for the marker
-const getCryptoColor = (cryptoType: string): string => {
-  // Return appropriate color based on crypto type
-  const colors: Record<string, string> = {
-    "BTC": "#F7931A",
-    "ETH": "#627EEA",
-    "USDT": "#26A17B",
-    // Add more as needed
-    "default": "#1E88E5"
-  };
-  return colors[cryptoType] || colors.default;
-};
+      // Create popup for the marker
+      const getCryptoColor = (cryptoType: string): string => {
+        // Return appropriate color based on crypto type
+        const colors: Record<string, string> = {
+          "BTC": "#f7931a",
+          "ETH": "#627eea",
+          "USDT": "#26a17b",
+          "SOL": "#00ffbd",
+          "BNB": "#f3ba2f",
+          "LTC": "#b8b8b8",
+          "NZDD": "#2775ca",
+          "USDC": "#2775ca", 
+          "XMR": "#ff6600",
+          "DOGE": "#c3a634",
+          "TRX": "#ff0013"
+        };
+        return colors[cryptoType] || colors.default;
+      };
 
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-};
+      const formatDate = (dateString: string): string => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+      };
 
-const tradeTypeColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444";
-const tradeTypeText = listing.tradeType === "buy" ? "Buying" : "Selling";
+      const tradeTypeColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444";
+      const tradeTypeText = listing.tradeType === "buy" ? "Buying" : "Selling";
 
-const popupHTML = `
-  <div style="width: 280px; background-color: #1F2937; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.5); overflow: hidden;">
-    <div style="padding: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3 style="font-size: 18px; font-weight: bold; color: white; margin: 0;">
-          ${listing.title}
-        </h3>
-        <button style="background: none; border: none; color: #9CA3AF; font-size: 24px; font-weight: bold; cursor: pointer; padding: 4px 8px;">
-          &times;
-        </button>
-      </div>
+      const popupHTML = `
+        <div style="width: 280px; background-color: #1F2937; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.5); overflow: hidden;">
+          <div style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h3 style="font-size: 18px; font-weight: bold; color: white; margin: 0;">
+                ${listing.title}
+              </h3>
+              <button id="popup-close-${listing.id}" style="background: none; border: none; color: #9CA3AF; font-size: 24px; font-weight: bold; cursor: pointer; padding: 4px 8px;">
+                &times;
+              </button>
+            </div>
 
-      <div style="display: flex; align-items: center; margin-bottom: 8px; gap: 8px;">
-        <div style="display: inline-block; padding: 4px 8px; border-radius: 9999px; font-size: 14px; background-color: ${getCryptoColor(listing.cryptoType)}; color: #000;">
-          ${listing.cryptoType}
+            <div style="display: flex; align-items: center; margin-bottom: 8px; gap: 8px;">
+              <div style="display: inline-block; padding: 4px 8px; border-radius: 9999px; font-size: 14px; background-color: ${getCryptoColor(listing.cryptoType)}; color: #000;">
+                ${listing.cryptoType}
+              </div>
+              
+              <div style="display: inline-block; padding: 4px 8px; border-radius: 9999px; font-size: 14px; background-color: ${tradeTypeColor}; color: white;">
+                ${tradeTypeText}
+              </div>
+            </div>
+
+            <div style="margin-bottom: 16px; padding: 12px; border-radius: 8px; background-color: #1F2937; color: white;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <div style="font-weight: 600; font-size: 20px;">
+                  $${parseInt(listing.nzValue).toFixed(2)} ${listing.currency}
+                </div>
+                <div style="color: #10B981; font-weight: 500; font-size: 16px;">
+                  (+${listing.marginRate}%)
+                </div>
+              </div>
+              
+              <div style="font-size: 15px; margin-bottom: 8px;">
+                Volume: ${listing.price} ${listing.cryptoType} 
+              </div>
+              
+              <div style="color: #9CA3AF; font-size: 14px;">
+                Posted ${formatDate(listing.createdAt)}
+              </div>
+            <br/>
+              <div style="margin-bottom: 8px; color: white; background-color:#4B5563; border-radius:5px; height:50px; padding:5px;">${listing.description}</div>
+            </div>
+
+            
+
+            <div style="display: flex; flex-direction: column; font-size: 14px; color: #D1D5DB; margin-bottom: 12px;">
+              <div style="margin-bottom: 4px;">
+                <span style="font-weight: bold;">Trader:</span> 
+                ${listing.trader.name}
+              </div>
+              <div>
+                <span style="font-weight: bold;">Rating:</span> 
+                ${listing.trader.rating}★ (${listing.trader.completedTrades} trades)
+              </div>
+            </div>
+
+            <button style="width: 100%; font-size:1.2rem; background: linear-gradient(to right, #22c55e, #16a34a); color: white; padding: 8px 0; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
+              Contact Trader
+            </button>
+          </div>
         </div>
-        
-        <div style="display: inline-block; padding: 4px 8px; border-radius: 9999px; font-size: 14px; background-color: ${tradeTypeColor}; color: white;">
-          ${tradeTypeText}
-        </div>
-      </div>
+      `;
 
-      <div style="margin-bottom: 8px;">
-        <div style="font-weight: 500; color: white; font-size: 18px;">
-          ${listing.price} ${listing.currency}
-        </div>
-        <div style="color: #9CA3AF; font-size: 14px;">
-          Posted ${formatDate(listing.createdAt)}
-        </div>
-      </div>
+      const popup = new window.mapboxgl.Popup({ 
+        offset: 25,
+        className: 'custom-popup', // Add a custom class
+        closeButton: false // Hide the default close button
+      }).setHTML(popupHTML);
 
-      <div style="margin-bottom: 8px; color: white;">${listing.description}</div>
+      // Add a style tag to the document to target the mapboxgl popup container
+      const styleTag = document.createElement('style');
+      styleTag.innerHTML = `
+        .custom-popup .mapboxgl-popup-content {
+          padding: 0;
+          background: transparent;
+          box-shadow: none;
+          border-radius: 0;
+        }
+        .custom-popup .mapboxgl-popup-tip {
+          border-top-color: #1F2937;
+          border-bottom-color: #1F2937;
+        }
+      `;
+      document.head.appendChild(styleTag);
 
-      <div style="display: flex; flex-direction: column; font-size: 14px; color: #D1D5DB; margin-bottom: 12px;">
-        <div style="margin-bottom: 4px;">
-          <span style="font-weight: bold;">Trader:</span> 
-          ${listing.trader.name}
-        </div>
-        <div>
-          <span style="font-weight: bold;">Rating:</span> 
-          ${listing.trader.rating}★ (${listing.trader.completedTrades} trades)
-        </div>
-      </div>
-
-      <button style="width: 100%; font-size:1.2em; background: linear-gradient(to right, #22c55e, #16a34a); color: white; padding: 8px 0; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
-        Contact Trader
-      </button>
-    </div>
-  </div>
-`;
-
-const popup = new window.mapboxgl.Popup({ 
-  offset: 25,
-  className: 'custom-popup', // Add a custom class
-  closeButton: false // Hide the default close button
-}).setHTML(popupHTML);
-
-// Add a style tag to the document to target the mapboxgl popup container
-const styleTag = document.createElement('style');
-styleTag.innerHTML = `
-  .custom-popup .mapboxgl-popup-content {
-    padding: 0;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-  }
-  .custom-popup .mapboxgl-popup-tip {
-    border-top-color: #1F2937;
-    border-bottom-color: #1F2937;
-  }
-`;
-document.head.appendChild(styleTag);
+      // Add event listener to close button after popup is added to DOM
+      popup.on('open', () => {
+        // Use a small timeout to ensure the DOM is updated
+        setTimeout(() => {
+          const closeButton = document.getElementById(`popup-close-${listing.id}`);
+          if (closeButton) {
+            closeButton.addEventListener('click', () => {
+              popup.remove();
+            });
+          }
+        }, 10);
+      });
 
       if (debug) console.log("Creating marker at:", [listing.location.lng, listing.location.lat]);
       
@@ -181,6 +237,9 @@ document.head.appendChild(styleTag);
           .setLngLat([listing.location.lng, listing.location.lat])
           .setPopup(popup)
           .addTo(map);
+        
+        // Add listing ID to marker for easier lookup
+        marker.listingId = listing.id;
         
         // Store reference to remove later
         newMarkers.push(marker);
@@ -212,7 +271,7 @@ document.head.appendChild(styleTag);
     markersRef.current = newMarkers;
     
     if (debug) console.log(`Added ${newMarkers.length} markers to map`);
-  }, [setSelectedListing, setShowPanel, setShowFilterMenu, isMobile, markersRef, debug]);
+  }, [debug, isMobile, setSelectedListing, setShowFilterMenu, setShowPanel]);
 
   // Initialize the map
   useEffect(() => {
@@ -270,9 +329,6 @@ document.head.appendChild(styleTag);
           // Store map object for later use
           setMapObject(map);
 
-          // Add navigation controls
-          map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
           // Wait for map to load before fetching listings
           map.on("load", () => {
             if (debug) console.log("Map loaded successfully");
@@ -298,6 +354,55 @@ document.head.appendChild(styleTag);
     // Initialize map when component mounts
     initializeMap();
   }, [listings, mapObject, setMapObject, mapLoaded, addMarkersToMap, debug]);
+
+  // This is a more robust version of the useEffect for finding markers
+  useEffect(() => {
+    if (!mapObject || !selectedListing || !selectedListing.location) return;
+    
+    if (debug) console.log("Selected listing changed, zooming to:", selectedListing.title);
+    
+    // Fly to the selected listing location
+    mapObject.flyTo({
+      center: [selectedListing.location.lng, selectedListing.location.lat],
+      zoom: 12,
+      essential: true,
+    });
+    
+    // First try to find marker by listing ID (most reliable)
+    let foundMarker = markersRef.current.find(marker => marker.listingId === selectedListing.id);
+    
+    // If not found by ID, try to find by coordinates (fallback)
+    if (!foundMarker) {
+      foundMarker = markersRef.current.find(marker => {
+        const markerCoords = marker.getLngLat();
+        // Use a small tolerance for floating point comparisons
+        const isCloseEnough = (a: number, b: number) => Math.abs(a - b) < 0.0000001;
+        
+        return (
+          isCloseEnough(markerCoords.lng, selectedListing.location.lng) && 
+          isCloseEnough(markerCoords.lat, selectedListing.location.lat)
+        );
+      });
+    }
+    
+    if (foundMarker) {
+      if (debug) console.log("Found marker, opening popup");
+      
+      // Close any open popups first
+      markersRef.current.forEach(m => {
+        if (m !== foundMarker && m.getPopup().isOpen()) {
+          m.togglePopup();
+        }
+      });
+      
+      // Open the popup if it's not already open
+      if (!foundMarker.getPopup().isOpen()) {
+        foundMarker.togglePopup();
+      }
+    } else {
+      if (debug) console.log("Marker not found for selected listing");
+    }
+  }, [selectedListing, mapObject, debug]);
 
   return (
     <div ref={mapRef} className="w-full h-full">

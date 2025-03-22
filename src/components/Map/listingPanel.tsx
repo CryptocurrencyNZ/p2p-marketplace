@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TradeListing } from "./types";
+import { TradeListing, TradeType } from "./types";
 
 interface CustomListingsPanelProps {
   isLoading: boolean;
@@ -39,62 +39,78 @@ const CustomListingsPanel: React.FC<CustomListingsPanelProps> = ({
 
   return (
     <div className="space-y-3 py-2">
-      {listings.map((listing) => (
-        <div
-          key={listing.id}
-          className={`mx-4 bg-gray-700 rounded-lg cursor-pointer transition-all hover:bg-gray-600 ${
-            selectedListing?.id === listing.id ? "ring-2 ring-green-500" : ""
-          }`}
-          onClick={() => onSelectListing(listing)}
-        >
-          <div className="p-3">
-            {/* Listing Header */}
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-base font-medium text-white mr-2">
-                {listing.title}
-              </h3>
-              <div
-                className="inline-block px-2 py-1 rounded-full text-xs font-medium"
-                style={{
-                  backgroundColor: getCryptoColor(listing.cryptoType),
-                  color: "#000",
-                }}
-              >
-                {listing.cryptoType}
+      {listings.map((listing) => {
+        const tradeTypeColor = listing.tradeType === TradeType.Buy ? "#22c55e" : "#ef4444";
+        const tradeTypeText = listing.tradeType === TradeType.Buy ? "Buying" : "Selling";
+        
+        return (
+          <div
+            key={listing.id}
+            className={`mx-4 bg-gray-700 rounded-lg cursor-pointer transition-all hover:bg-gray-600 ${
+              selectedListing?.id === listing.id ? "ring-2 ring-green-500" : ""
+            }`}
+            onClick={() => onSelectListing(listing)}
+          >
+            <div className="p-3 w-full">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-base font-bold text-white line-clamp-1">
+                  {listing.title}
+                </h3>
+                <div className="flex gap-1">
+                  <div
+                    className="inline-block px-2 py-0.5 rounded-full text-xs"
+                    style={{
+                      backgroundColor: getCryptoColor(listing.cryptoType),
+                      color: "#000",
+                    }}
+                  >
+                    {listing.cryptoType}
+                  </div>
+                  <div
+                    className="inline-block px-1.5 py-0.5 rounded-full text-xs"
+                    style={{
+                      backgroundColor: tradeTypeColor,
+                      color: "white",
+                    }}
+                  >
+                    {tradeTypeText}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Price and Type */}
-            <div className="flex justify-between items-center mb-2">
-              <div className="font-medium text-white">
-                {listing.price} {listing.currency}
+              <div className="flex mb-2 gap-2">
+                <div className="p-2 rounded-lg text-white flex-1">
+                  <div className="flex items-baseline">
+                    <div className="font-semibold text-base mr-2">
+                      ${parseInt(listing.nzValue).toFixed(2)} {listing.currency}
+                    </div>
+                    <div className="text-green-500 font-medium text-xs">
+                      (+{listing.marginRate}%)
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs mt-1">
+                    <div>
+                      Vol: {listing.price} {listing.cryptoType}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-2 rounded-lg bg-gray-600 text-xs text-gray-100 flex-1 line-clamp-3 overflow-hidden">
+                  {listing.description}
+                </div>
               </div>
-              <div
-                className="inline-block px-2 py-1 rounded-full text-xs"
-                style={{
-                  backgroundColor: listing.tradeType === "buy" ? "#22c55e" : "#ef4444",
-                  color: "white",
-                }}
-              >
-                {listing.tradeType === "buy" ? "Buying" : "Selling"}
-              </div>
-            </div>
 
-            {/* Description - Truncated */}
-            <div className="text-gray-300 text-sm mb-2 line-clamp-2">
-              {listing.description}
-            </div>
-
-            {/* Trader Info */}
-            <div className="flex justify-between items-center text-xs text-gray-400">
-              <div>
-                {listing.trader.name} ({listing.trader.rating}★)
+              <div className="flex justify-between text-xs text-gray-400">
+                <div>
+                  {listing.trader.name} ({listing.trader.rating}★)
+                </div>
+                <div>{formatDate(listing.createdAt)}</div>
               </div>
-              <div>{formatDate(listing.createdAt)}</div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

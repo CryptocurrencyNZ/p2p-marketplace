@@ -127,8 +127,13 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
       USDT: "#26a17b",
       SOL: "#00ffbd",
       BNB: "#f3ba2f",
+      LTC: "#b8b8b8",
+      NZDD: "#2775ca",
+      USDC: "#2775ca",
+      XMR: "#ff6600",
+      DOGE: "#c3a634",
+      TRX: "#ff0013"
     };
-
     return colors[cryptoType] || "#8c8c8c";
   };
 
@@ -219,43 +224,50 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
 
       {/* Mobile Filter Menu */}
       {isMobile && showFilterMenu && (
-        <div className="fixed top-4 left-0 right-0 z-10 px-4 mx-auto">
-          <div className="bg-white shadow-lg rounded-lg p-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1 w-full">
-              <button
-                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "all" ? "bg-gradient-to-r from-green-500 to-green-600 text-white" : "bg-gray-200 text-gray-800"}`}
-                onClick={() => setActiveFilter("all")}
-              >
-                All
-              </button>
-              <button
-                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "buying" ? "bg-green-600 text-white" : "bg-gray-200 text-gray-800"}`}
-                onClick={() => setActiveFilter("buying")}
-              >
-                Buying
-              </button>
-              <button
-                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "selling" ? "bg-red-600 text-white" : "bg-gray-200 text-gray-800"}`}
-                onClick={() => setActiveFilter("selling")}
-              >
-                Selling
-              </button>
-              <select
-                className="px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-800"
-                value={cryptoFilter}
-                onChange={(e) => setCryptoFilter(e.target.value)}
-              >
-                <option value="all">All Crypto</option>
-                <option value="BTC">Bitcoin</option>
-                <option value="ETH">Ethereum</option>
-                <option value="USDT">USDT</option>
-                <option value="SOL">Solana</option>
-                <option value="BNB">BNB</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
+
+  <div className="fixed top-4 left-0 right-0 z-10 w-full">
+    <div className="bg-transparent p-2 flex flex-wrap items-center justify-between gap-2 w-full">
+      <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1 w-full">
+        <button
+          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'all' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          onClick={() => setActiveFilter('all')}
+        >
+          All
+        </button>
+        <button
+          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'buying' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          onClick={() => setActiveFilter('buying')}
+        >
+          Buying
+        </button>
+        <button
+          className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'selling' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+          onClick={() => setActiveFilter('selling')}
+        >
+          Selling
+        </button>
+        <select
+          className="px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-800"
+          value={cryptoFilter}
+          onChange={(e) => setCryptoFilter(e.target.value)}
+        >
+          <option value="all">All Crypto</option>
+          <option value="BTC">Bitcoin</option>
+          <option value="LTC">Litecoin</option>
+          <option value="NZDD">NZDD</option>
+          <option value="USDT">USDT</option>
+          <option value="USDC">USDC</option>
+          <option value="XMR">Monero</option>
+          <option value="ETH">Ethereum</option>
+          <option value="SOL">Solana</option>
+          <option value="DOGE">Dogecoin</option>
+          <option value="TRX">Tron</option>
+          <option value="BNB">BNB</option>
+        </select>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Desktop Layout with right sidebar */}
       <div className="flex h-full w-full">
@@ -310,9 +322,15 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                 >
                   <option value="all">All Crypto</option>
                   <option value="BTC">Bitcoin</option>
-                  <option value="ETH">Ethereum</option>
+                  <option value="LTC">Litecoin</option>
+                  <option value="NZDD">NZDD</option>
                   <option value="USDT">USDT</option>
+                  <option value="USDC">USDC</option>
+                  <option value="XMR">Monero</option>
+                  <option value="ETH">Ethereum</option>
                   <option value="SOL">Solana</option>
+                  <option value="DOGE">Dogecoin</option>
+                  <option value="TRX">Tron</option>
                   <option value="BNB">BNB</option>
                 </select>
 
@@ -466,9 +484,15 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                 >
                   <option value="all">All Crypto</option>
                   <option value="BTC">Bitcoin</option>
-                  <option value="ETH">Ethereum</option>
+                  <option value="LTC">Litecoin</option>
+                  <option value="NZDD">NZDD</option>
                   <option value="USDT">USDT</option>
+                  <option value="USDC">USDC</option>
+                  <option value="XMR">Monero</option>
+                  <option value="ETH">Ethereum</option>
                   <option value="SOL">Solana</option>
+                  <option value="DOGE">Dogecoin</option>
+                  <option value="TRX">Tron</option>
                   <option value="BNB">BNB</option>
                 </select>
 
@@ -574,208 +598,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
           </div>
         )}
       </div>
-
-      {/* Selected Listing Detail Popup - Only on Mobile */}
-      {selectedListing && isMobile && (
-        <div
-          className={`fixed inset-x-0 bottom-0 bg-gray-800 rounded-t-lg shadow-2xl z-50 ${
-            isMobile && showPanel ? "bottom-[60vh]" : ""
-          }`}
-        >
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-bold text-white">
-                {selectedListing.title}
-              </h3>
-              <button
-                className="text-gray-400 hover:text-white text-xl font-bold p-2"
-                onClick={() => setSelectedListing(null)}
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="flex items-center mb-2 gap-2">
-              <div
-                className="inline-block px-2 py-1 rounded-full text-sm"
-                style={{
-                  backgroundColor: getCryptoColor(selectedListing.cryptoType),
-                  color: "#000",
-                }}
-              >
-                {selectedListing.cryptoType}
-              </div>
-
-              <div
-                className="inline-block px-2 py-1 rounded-full text-sm"
-                style={{
-                  backgroundColor:
-                    selectedListing.tradeType === "buy" ? "#22c55e" : "#ef4444",
-                  color: "white",
-                }}
-              >
-                {selectedListing.tradeType === "buy" ? "Buying" : "Selling"}
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <div className="font-medium text-white text-lg">
-                {selectedListing.price} {selectedListing.currency}
-              </div>
-              <div className="text-gray-400 text-sm">
-                Posted {formatDate(selectedListing.createdAt)}
-              </div>
-            </div>
-
-            <div className="mb-2 text-white">{selectedListing.description}</div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center text-sm text-gray-300 mb-3">
-              <div className="mr-3 mb-1 sm:mb-0">
-                <span className="font-bold">Trader:</span>{" "}
-                {selectedListing.trader.name}
-              </div>
-              <div>
-                <span className="font-bold">Rating:</span>{" "}
-                {selectedListing.trader.rating}★ (
-                {selectedListing.trader.completedTrades} trades)
-              </div>
-            </div>
-
-            <button
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg"
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/trade-sessions", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      listingId: selectedListing.id,
-                      vendorId: selectedListing.trader.id,
-                      onChain: false,
-                    }),
-                  });
-
-                  if (!response.ok) {
-                    throw new Error("Failed to create trade session");
-                  }
-
-                  const data = await response.json();
-
-                  // Navigate to the chat page
-                  window.location.href = `/dashboard/messages?chat=${data.id}`;
-                } catch (error) {
-                  console.error("Error creating trade session:", error);
-                  // You might want to show an error message to the user here
-                }
-              }}
-            >
-              Contact Trader
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Selected Listing Detail Panel - Desktop version */}
-      {selectedListing && !isMobile && (
-        <div className="fixed top-4 left-4 bg-gray-800 rounded-lg shadow-2xl z-50 w-80">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-bold text-white">
-                {selectedListing.title}
-              </h3>
-              <button
-                className="text-gray-400 hover:text-white text-xl font-bold p-2"
-                onClick={() => setSelectedListing(null)}
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="flex items-center mb-2 gap-2">
-              <div
-                className="inline-block px-2 py-1 rounded-full text-sm"
-                style={{
-                  backgroundColor: getCryptoColor(selectedListing.cryptoType),
-                  color: "#000",
-                }}
-              >
-                {selectedListing.cryptoType}
-              </div>
-
-              <div
-                className="inline-block px-2 py-1 rounded-full text-sm"
-                style={{
-                  backgroundColor:
-                    selectedListing.tradeType === "buy" ? "#22c55e" : "#ef4444",
-                  color: "white",
-                }}
-              >
-                {selectedListing.tradeType === "buy" ? "Buying" : "Selling"}
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <div className="font-medium text-white text-lg">
-                {selectedListing.price} {selectedListing.currency}
-              </div>
-              <div className="text-gray-400 text-sm">
-                Posted {formatDate(selectedListing.createdAt)}
-              </div>
-            </div>
-
-            <div className="mb-2 text-white">{selectedListing.description}</div>
-
-            <div className="flex flex-col text-sm text-gray-300 mb-3">
-              <div className="mb-1">
-                <span className="font-bold">Trader:</span>{" "}
-                {selectedListing.trader.name}
-              </div>
-              <div>
-                <span className="font-bold">Rating:</span>{" "}
-                {selectedListing.trader.rating}★ (
-                {selectedListing.trader.completedTrades} trades)
-              </div>
-            </div>
-
-            <button
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg"
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/trade-sessions", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      listingId: selectedListing.id,
-                      vendorId: selectedListing.trader.id,
-                      onChain: false,
-                    }),
-                  });
-
-                  if (!response.ok) {
-                    throw new Error("Failed to create trade session");
-                  }
-
-                  const data = await response.json();
-
-                  // Navigate to the chat page
-                  window.location.href = `/dashboard/messages/${data.id}`;
-                } catch (error) {
-                  console.error("Error creating trade session:", error);
-                  // You might want to show an error message to the user here
-                }
-              }}
-            >
-              Contact Trader
-            </button>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };

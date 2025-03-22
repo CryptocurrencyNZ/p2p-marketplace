@@ -1,143 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-
-// Type definitions for our trade listings
-interface TradeLocation {
-  lat: number;
-  lng: number;
-}
-
-interface TradeListing {
-  id: string;
-  title: string;
-  location: TradeLocation;
-  price: number;
-  currency: string;
-  cryptoType: string;
-  trader: {
-    name: string;
-    rating: number;
-    completedTrades: number;
-  };
-  description: string;
-  createdAt: string;
-}
+import React, { useEffect, useRef } from "react";
+import { TradeListing } from "./types";
 
 interface P2PCryptoTradeMapProps {
-  className?: string;
+  listings: TradeListing[];
+  selectedListing: TradeListing | null;
+  setSelectedListing: (listing: TradeListing | null) => void;
+  mapObject: any;
+  setMapObject: (map: any) => void;
+  isLoading: boolean;
+  isMobile: boolean;
+  setShowPanel: (show: boolean) => void;
+  setShowFilterMenu: (show: boolean) => void;
+  fetchListings: () => Promise<TradeListing[]>;
 }
 
 const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
-  className = "",
+  listings,
+  selectedListing,
+  setSelectedListing,
+  mapObject,
+  setMapObject,
+  isLoading,
+  isMobile,
+  setShowPanel,
+  setShowFilterMenu,
+  fetchListings,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [listings, setListings] = useState<TradeListing[]>([]);
-  const [selectedListing, setSelectedListing] = useState<TradeListing | null>(
-    null,
-  );
-  const [mapObject, setMapObject] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [viewMode, setViewMode] = useState<"map" | "listings">("map"); // Default to map view
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-
-  // Check if we're on mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-
-      // Resize map if it's initialized
-      if (mapObject) {
-        setTimeout(() => {
-          mapObject.resize();
-        }, 100); // Increased timeout for more reliable resizing
-      }
-    };
-
-    // Check on initial load
-    checkMobile();
-
-    // Add resize listener
-    window.addEventListener("resize", checkMobile);
-
-    // Cleanup
-    return () => window.removeEventListener("resize", checkMobile);
-  }, [mapObject]);
-
-  // Mock data - replace with your actual API call
-  const fetchListings = async () => {
-    // Simulating API fetch delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Mock data for New Zealand locations
-    const mockListings: TradeListing[] = [
-      {
-        id: "1",
-        title: "Selling Bitcoin in Auckland CBD",
-        location: { lat: -36.8485, lng: 174.7633 },
-        price: 82000,
-        currency: "NZD",
-        cryptoType: "BTC",
-        trader: { name: "CryptoKiwi", rating: 4.8, completedTrades: 143 },
-        description: "Trading in person at the central library. Cash only.",
-        createdAt: "2025-03-15T14:30:00Z",
-      },
-      {
-        id: "2",
-        title: "Ethereum for Cash in Wellington",
-        location: { lat: -41.2865, lng: 174.7762 },
-        price: 3700,
-        currency: "NZD",
-        cryptoType: "ETH",
-        trader: { name: "WellyTrader", rating: 4.6, completedTrades: 87 },
-        description: "Meet at Cuba Street cafes. Min trade 0.5 ETH.",
-        createdAt: "2025-03-18T09:15:00Z",
-      },
-      {
-        id: "3",
-        title: "USDT trades in Christchurch",
-        location: { lat: -43.5321, lng: 172.6362 },
-        price: 1.62,
-        currency: "NZD",
-        cryptoType: "USDT",
-        trader: {
-          name: "SouthIslandCrypto",
-          rating: 5.0,
-          completedTrades: 211,
-        },
-        description:
-          "Buying USDT with NZD. Flexible meeting locations around Christchurch.",
-        createdAt: "2025-03-19T16:45:00Z",
-      },
-      {
-        id: "4",
-        title: "Buying Solana in Hamilton",
-        location: { lat: -37.787, lng: 175.2793 },
-        price: 290,
-        currency: "NZD",
-        cryptoType: "SOL",
-        trader: { name: "HamTownMiner", rating: 4.2, completedTrades: 43 },
-        description: "Looking to buy SOL. Can meet anywhere in Hamilton area.",
-        createdAt: "2025-03-17T11:20:00Z",
-      },
-      {
-        id: "5",
-        title: "Sell BNB in Queenstown",
-        location: { lat: -45.0302, lng: 168.6612 },
-        price: 930,
-        currency: "NZD",
-        cryptoType: "BNB",
-        trader: { name: "QTownCryptoGuru", rating: 4.9, completedTrades: 76 },
-        description: "Selling BNB at market price. Meet in public places only.",
-        createdAt: "2025-03-16T15:50:00Z",
-      },
-    ];
-
-    setListings(mockListings);
-    setIsLoading(false);
-    return mockListings;
-  };
 
   // Initialize the map
   useEffect(() => {
@@ -147,8 +38,6 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
         mapRef.current &&
         !mapRef.current.querySelector(".mapboxgl-canvas-container")
       ) {
-        setIsLoading(true);
-
         // Load Mapbox GL script dynamically
         if (!window.mapboxgl) {
           // Load CSS
@@ -182,7 +71,7 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
 
         const map = new mapboxgl.Map({
           container: mapRef.current,
-          style: "mapbox://styles/mapbox/dark-v11", // Using dark style for crypto theme
+          style: "mapbox://styles/mapbox/outdoors-v12", // Changed to light style
           center: nzCenter,
           zoom: initialZoom,
         });
@@ -195,290 +84,83 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
 
         // Wait for map to load before fetching listings
         map.on("load", async () => {
-          const tradeListings = await fetchListings();
-
           // Add markers for each listing
-          tradeListings.forEach((listing) => {
-            // Create custom element for marker
-            const el = document.createElement("div");
-            el.className = "marker";
-            el.style.backgroundColor = getCryptoColor(listing.cryptoType);
-            el.style.width = "25px";
-            el.style.height = "25px";
-            el.style.borderRadius = "50%";
-            el.style.border = "2px solid white";
-            el.style.cursor = "pointer";
-
-            // Create popup for the marker
-            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-              <div style="color: black; max-width: 200px;">
-                <h3 style="font-weight: bold; margin-bottom: 5px;">${listing.title}</h3>
-                <p>${listing.cryptoType} - ${listing.price} ${listing.currency}</p>
-                <p>Trader: ${listing.trader.name} (${listing.trader.rating}★)</p>
-              </div>
-            `);
-
-            // Create and add the marker
-            const marker = new mapboxgl.Marker(el)
-              .setLngLat([listing.location.lng, listing.location.lat])
-              .setPopup(popup)
-              .addTo(map);
-
-            // Add click event to focus on this listing
-            el.addEventListener("click", () => {
-              setSelectedListing(listing);
-
-              // Fly to this location
-              map.flyTo({
-                center: [listing.location.lng, listing.location.lat],
-                zoom: 12,
-                essential: true,
-              });
-
-              // On mobile, ensure we're in map view
-              if (isMobile) {
-                setViewMode("map");
-              }
-            });
-          });
+          addMarkersToMap(map, listings);
         });
+      } else if (mapObject && listings.length > 0) {
+        // If map is already initialized but we need to refresh markers
+        addMarkersToMap(mapObject, listings);
       }
     };
 
     // Initialize map when component mounts
     initializeMap();
-  }, [isMobile]);
+  }, [listings, mapObject, setMapObject]);
 
-  // Helper function to get color based on crypto type
-  const getCryptoColor = (cryptoType: string): string => {
-    const colors: { [key: string]: string } = {
-      BTC: "#f7931a",
-      ETH: "#627eea",
-      USDT: "#26a17b",
-      SOL: "#00ffbd",
-      BNB: "#f3ba2f",
-    };
+  // Function to add markers to the map
+  const addMarkersToMap = (map: any, tradeListings: TradeListing[]) => {
+    // Clear existing markers if needed
+    const existingMarkers = document.querySelectorAll('.marker');
+    existingMarkers.forEach(marker => marker.remove());
 
-    return colors[cryptoType] || "#8c8c8c";
-  };
+    // Add markers for each listing
+    tradeListings.forEach((listing) => {
+      // Create custom element for marker
+      const el = document.createElement("div");
+      el.className = "marker";
+      
+      // Set color based on trade type (buy/sell)
+      const markerColor = listing.tradeType === "buy" ? "#22c55e" : "#ef4444"; // Green for buy, red for sell
+      
+      el.style.backgroundColor = markerColor;
+      el.style.width = "25px";
+      el.style.height = "25px";
+      el.style.borderRadius = "50%";
+      el.style.border = "2px solid white";
+      el.style.cursor = "pointer";
 
-  // Format date to more readable format
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-NZ", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      // Create popup for the marker
+      const popup = new window.mapboxgl.Popup({ offset: 25 }).setHTML(`
+        <div style="color: black; max-width: 200px;">
+          <h3 style="font-weight: bold; margin-bottom: 5px;">${listing.title}</h3>
+          <p>${listing.cryptoType} - ${listing.price} ${listing.currency}</p>
+          <p>Trader: ${listing.trader.name} (${listing.trader.rating}★)</p>
+          <p>Type: ${listing.tradeType === "buy" ? "Buying" : "Selling"}</p>
+        </div>
+      `);
+
+      // Create and add the marker
+      const marker = new window.mapboxgl.Marker(el)
+        .setLngLat([listing.location.lng, listing.location.lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      // Add click event to focus on this listing
+      el.addEventListener("click", () => {
+        setSelectedListing(listing);
+
+        // Fly to this location
+        map.flyTo({
+          center: [listing.location.lng, listing.location.lat],
+          zoom: 12,
+          essential: true,
+        });
+
+        // On mobile, show the panel
+        if (isMobile) {
+          setShowPanel(true);
+          // Hide filter menu when showing panel
+          setShowFilterMenu(false);
+        }
+      });
     });
   };
 
-  // Filter listings (could add filtering functionality later)
-  const filteredListings = listings;
-
-  // This effect will resize the map when the view mode changes
-  useEffect(() => {
-    if (mapObject && viewMode === "map") {
-      // Small delay to allow DOM to update
-      setTimeout(() => {
-        mapObject.resize();
-      }, 200); // Increased timeout for more reliable resizing
-    }
-  }, [viewMode, mapObject]);
-
   return (
-    <div className={`${className} relative`}>
-      {/* Mobile View Toggle */}
-      {isMobile && (
-        <div className="bg-gray-800 rounded-lg p-2 mb-2 flex">
-          <button
-            className={`flex-1 py-2 px-4 rounded-lg ${viewMode === "map" ? "bg-blue-600 text-white" : "text-gray-300"}`}
-            onClick={() => setViewMode("map")}
-          >
-            Map
-          </button>
-          <button
-            className={`flex-1 py-2 px-4 rounded-lg ${viewMode === "listings" ? "bg-blue-600 text-white" : "text-gray-300"}`}
-            onClick={() => setViewMode("listings")}
-          >
-            Listings ({filteredListings.length})
-          </button>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="flex flex-col md:flex-row md:h-[600px]">
-        {/* Map Section - Improved mobile handling */}
-        <div
-          className={`
-            ${
-              isMobile
-                ? viewMode === "map"
-                  ? "block h-[50vh] min-h-[400px]"
-                  : "hidden"
-                : "flex-grow h-full"
-            } relative bg-gray-900 rounded-lg shadow-xl overflow-hidden
-          `}
-          style={{ display: isMobile && viewMode !== "map" ? "none" : "block" }}
-        >
-          {/* Map Container */}
-          <div ref={mapRef} className="w-full h-full">
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-80 z-10">
-                <div className="text-white text-lg">Loading map...</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Listings Panel - Different behavior on mobile vs desktop */}
-        <div
-          className={`
-            ${
-              isMobile
-                ? viewMode === "listings"
-                  ? "block h-[50vh] min-h-[400px]"
-                  : "hidden"
-                : "w-80 h-full bg-gray-800 border-l border-gray-700 shadow-xl ml-2"
-            } bg-gray-800 rounded-lg overflow-hidden
-          `}
-        >
-          <div className="flex flex-col h-full">
-            {!isMobile && (
-              <div className="p-4 border-b border-gray-700">
-                <h2 className="text-xl font-bold text-white">
-                  P2P Crypto Trade Listings
-                </h2>
-                <p className="text-gray-400 text-sm">
-                  Showing {filteredListings.length} available trades
-                </p>
-              </div>
-            )}
-
-            <div className="flex-grow overflow-y-auto">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-white">Loading listings...</div>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-700">
-                  {filteredListings.map((listing) => (
-                    <div
-                      key={listing.id}
-                      className={`p-4 hover:bg-gray-700 cursor-pointer transition-colors ${selectedListing?.id === listing.id ? "bg-gray-700 border-l-4 border-blue-500" : ""}`}
-                      onClick={() => {
-                        setSelectedListing(listing);
-
-                        // Fly to this location on the map
-                        if (mapObject) {
-                          mapObject.flyTo({
-                            center: [
-                              listing.location.lng,
-                              listing.location.lat,
-                            ],
-                            zoom: 12,
-                            essential: true,
-                          });
-                        }
-
-                        // On mobile, switch to map view after selecting
-                        if (isMobile) {
-                          setViewMode("map");
-                        }
-                      }}
-                    >
-                      <div className="flex items-center mb-2">
-                        <div
-                          className="w-6 h-6 rounded-full mr-2"
-                          style={{
-                            backgroundColor: getCryptoColor(listing.cryptoType),
-                          }}
-                        ></div>
-                        <h3 className="font-medium text-white">
-                          {listing.title}
-                        </h3>
-                      </div>
-
-                      <div className="flex justify-between mb-2">
-                        <div className="text-gray-300">
-                          {listing.cryptoType}
-                        </div>
-                        <div className="font-medium text-white">
-                          {listing.price} {listing.currency}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <div className="text-gray-400">
-                          {listing.trader.name} ({listing.trader.rating}★)
-                        </div>
-                        <div className="text-gray-400">
-                          {formatDate(listing.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Selected Listing Detail Popup */}
-      {selectedListing && (
-        <div className="fixed inset-x-0 bottom-0 md:left-auto md:right-4 md:bottom-4 md:w-80 bg-gray-800 rounded-t-lg md:rounded-lg shadow-2xl z-50">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-bold text-white">
-                {selectedListing.title}
-              </h3>
-              <button
-                className="text-gray-400 hover:text-white text-xl font-bold p-2"
-                onClick={() => setSelectedListing(null)}
-              >
-                &times;
-              </button>
-            </div>
-
-            <div
-              className="inline-block px-2 py-1 rounded-full text-sm mb-2"
-              style={{
-                backgroundColor: getCryptoColor(selectedListing.cryptoType),
-                color: "#000",
-              }}
-            >
-              {selectedListing.cryptoType}
-            </div>
-
-            <div className="mb-2">
-              <div className="font-medium text-white text-lg">
-                {selectedListing.price} {selectedListing.currency}
-              </div>
-              <div className="text-gray-400 text-sm">
-                Posted {formatDate(selectedListing.createdAt)}
-              </div>
-            </div>
-
-            <div className="mb-2 text-white">{selectedListing.description}</div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center text-sm text-gray-300 mb-3">
-              <div className="mr-3 mb-1 sm:mb-0">
-                <span className="font-bold">Trader:</span>{" "}
-                {selectedListing.trader.name}
-              </div>
-              <div>
-                <span className="font-bold">Rating:</span>{" "}
-                {selectedListing.trader.rating}★ (
-                {selectedListing.trader.completedTrades} trades)
-              </div>
-            </div>
-
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg">
-              Contact Trader
-            </button>
-          </div>
+    <div ref={mapRef} className="w-full h-full">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 bg-opacity-80 z-10">
+          <div className="text-gray-800 text-lg">Loading map...</div>
         </div>
       )}
     </div>

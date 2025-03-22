@@ -17,7 +17,7 @@ export default function Navbar() {
         href="/dashboard"
         icon={<MapPin size={20} />}
         active={isActive("/dashboard")}
-        label="Map"
+        label="P2P Listings"
       />
       <NavItem
         href="/dashboard/messages"
@@ -78,7 +78,7 @@ export default function Navbar() {
           href="/dashboard"
           icon={<MapPin size={24} />}
           active={isActive("/dashboard")}
-          label="Map"
+          label="P2P Listings"
           sidebar
         />
         <NavItem
@@ -94,7 +94,6 @@ export default function Navbar() {
           active={isActive("/dashboard/create")}
           label="Create Listing"
           sidebar
-          highlight
         />
         <NavItem
           href="/dashboard/activity"

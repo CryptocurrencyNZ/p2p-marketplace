@@ -3,7 +3,6 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import LoadingBarComponent from "@/components/loading";
 import { Suspense } from "react";
-import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 const geistSans = Geist({
@@ -55,9 +54,7 @@ export default function RootLayout({
         <Suspense>
           <LoadingBarComponent color="#00ff00" />
         </Suspense>
-        <Providers>
-          {children}
-        </Providers>
+        {children}
       </body>
     </html>
   );

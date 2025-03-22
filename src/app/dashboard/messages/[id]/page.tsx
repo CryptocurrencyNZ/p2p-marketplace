@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   Send,
@@ -19,6 +20,7 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
+import { useRealTimeMessages } from "@/lib/useRealTimeMessages";
 
 interface Message {
   id: string;
@@ -53,6 +55,7 @@ interface ChatData {
 const ChatRoom = () => {
   const router = useRouter();
   const { id: chatId } = useParams() as { id: string };
+  const { data: session } = useSession();
 
   // References
   const messageInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +67,9 @@ const ChatRoom = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Use real-time messaging
+  const { isConnected, lastEvent, sendMessage } = useRealTimeMessages();
 
   // Fetch chat data from API
   useEffect(() => {
@@ -130,7 +136,51 @@ const ChatRoom = () => {
     }
   }, [chatId, currentChat]);
 
-  // Handle sending a message
+  // Listen for real-time messages
+  useEffect(() => {
+    if (!lastEvent || !chatId) return;
+
+    // Only handle "new-message" events
+    if (lastEvent.event === 'new-message') {
+      const data = lastEvent.data;
+      
+      // Only process messages for this chat
+      if (data.chatId === chatId) {
+        console.log('Processing new message for this chat:', data);
+        
+        // Create a message object
+        const newMessage: Message = {
+          id: data.id || `recv-${Date.now()}`,
+          sender: "them",
+          content: data.message,
+          timestamp: new Date(data.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          status: "received",
+        };
+        
+        // Add to messages (checking for duplicates)
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMessage.id)) {
+            return prev;
+          }
+          
+          return [...prev, newMessage];
+        });
+        
+        // Mark as read
+        fetch(`/api/chats/${chatId}/read`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }).catch(err => {
+          console.error("Error marking message as read:", err);
+        });
+      }
+    }
+  }, [lastEvent, chatId]);
+
+  // Updated send message function
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() === "") return;
@@ -148,34 +198,31 @@ const ChatRoom = () => {
       status: "sending",
     };
 
+    // Add to UI immediately
     setMessages((prev) => [...prev, newMessage]);
+    
+    // Clear input and focus
+    const messageContent = message;
     setMessage("");
-
-    // Focus back on input after sending
     messageInputRef.current?.focus();
 
     try {
-      // Send message to API
-      const response = await fetch("/api/chats/send-message", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chatId,
-          content: newMessage.content,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
+      // Get the receiver ID
+      if (!currentChat?.user) {
+        throw new Error("Chat user information not available");
       }
-
-      const data = await response.json();
-
-      // Replace the temporary message with the one from the server
+      
+      // Use our real-time message function
+      const receiverId = currentChat.user.address;
+      console.log(`Sending message to ${receiverId} in chat ${chatId}`);
+      
+      const success = await sendMessage(receiverId, messageContent, chatId);
+      
+      // Update message status based on result
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === tempId ? data.message : msg)),
+        prev.map((msg) =>
+          msg.id === tempId ? { ...msg, status: success ? "sent" : "error" } : msg
+        )
       );
     } catch (err) {
       console.error("Error sending message:", err);
@@ -183,8 +230,8 @@ const ChatRoom = () => {
       // Update message status to error
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === tempId ? { ...msg, status: "error" } : msg,
-        ),
+          msg.id === tempId ? { ...msg, status: "error" } : msg
+        )
       );
     }
   };
@@ -455,17 +502,19 @@ const ChatRoom = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={!message.trim()}
-              className={`p-2.5 rounded-full transition-all duration-200 ${
-                message.trim()
-                  ? "bg-gradient-to-r from-green-600 to-green-500 text-gray-900 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                  : "bg-gray-700 text-gray-500"
-              }`}
-            >
-              <Send size={18} />
-            </button>
+            <div className="flex items-center">
+              <button
+                type="submit"
+                disabled={!message.trim()}
+                className={`p-2.5 rounded-full transition-all duration-200 ${
+                  message.trim()
+                    ? "bg-gradient-to-r from-green-600 to-green-500 text-gray-900 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                    : "bg-gray-700 text-gray-500"
+                }`}
+              >
+                <Send size={18} />
+              </button>
+            </div>
           </div>
         </form>
       </div>

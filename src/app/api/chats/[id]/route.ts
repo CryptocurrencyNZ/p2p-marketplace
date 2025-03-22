@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { users, messages, userProfile, starredChats } from "@/db/schema";
-import { and, asc, eq, gt, or, SQL } from "drizzle-orm";
+import { and, desc, eq, gt, or, SQL } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -60,7 +60,8 @@ export async function GET(
         .select()
         .from(messages)
         .where(eq(messages.conversationID, conversationId))
-        .orderBy(asc(messages.createdAt)),
+        .orderBy(desc(messages.createdAt))
+        .limit(32),
     ]);
 
     // maybe need if stuff here

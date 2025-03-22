@@ -1,15 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
+import { AlertCircle, Github, Monitor, Smartphone } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { Github, AlertCircle, Monitor, Smartphone } from "lucide-react";
 import Image from "next/image";
-
-// Dynamically import the wallet button with no SSR
-const WalletButton = dynamic(() => import("@/components/wallet-button"), {
-  ssr: false,
-});
+import { useState } from "react";
 
 export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
@@ -131,25 +125,6 @@ export default function LoginPage() {
             <div className="relative my-2">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full h-px bg-gray-700"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-gray-800 px-2 text-gray-400">
-                  Or connect wallet
-                </span>
-              </div>
-            </div>
-
-            {/* Custom styled container for Rainbow Kit */}
-            <div className="flex justify-center mt-2">
-              <div className="p-1 rounded-lg bg-gradient-to-r from-green-500/40 via-green-400/40 to-green-500/40">
-                <div className="p-px bg-gray-800 rounded-lg">
-                  <button
-                    type="button"
-                    className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-green-900/60 hover:to-green-800/60 hover:shadow-[0_0_10px_rgba(34,197,94,0.5)] text-white font-semibold px-6 py-2.5 rounded-md transition-all duration-300"
-                  >
-                    Connect Wallet
-                  </button>
-                </div>
               </div>
             </div>
           </div>

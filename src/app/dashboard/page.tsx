@@ -1,11 +1,12 @@
 "use client";
 
-import P2PCryptoTradeMap from "@/components/Listings/listing";
+import P2PCryptoTradeContainer from "@/components/Map/container";
 
 const Page = () => {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 md:px-8">
-        <P2PCryptoTradeMap />
+    <div className="w-full h-screen overflow-hidden">
+
+        <P2PCryptoTradeContainer />
     </div>
   );
 };

@@ -64,26 +64,32 @@ const ChatRoom = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const messageIdsRef = useRef<Set<string>>(new Set());
 
   // Fetch chat data from API
   useEffect(() => {
     const fetchChatData = async () => {
       try {
         setLoading(true);
-        // Current user - in production this would come from auth
-        const currentUser = "buyer123"; // Default user for demo
 
-        const response = await fetch(
-          `/api/chats/${chatId}?userId=${currentUser}`,
-        );
+        const response = await fetch(`/api/chats/${chatId}`);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch chat data");
+          throw new Error(
+            response.status === 404
+              ? "Chat not found"
+              : "Failed to fetch chat data",
+          );
         }
 
         const data = await response.json();
         setCurrentChat(data);
-        setMessages(data.messages || []);
+        setMessages(data.messages ? [...data.messages].reverse() : []);
+
+        messageIdsRef.current = new Set(
+          data.messages?.map((m: Message) => m.id) || [],
+        );
+
         setError(null);
       } catch (err) {
         console.error("Error fetching chat data:", err);
@@ -98,9 +104,57 @@ const ChatRoom = () => {
     }
   }, [chatId]);
 
-  // Auto scroll to bottom when new messages arrive
+  // Set up polling for new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!chatId || loading) return;
+
+    const pollNewMessages = async () => {
+      try {
+        // Fetch the chat data without any query parameters for simplicity
+        let url = `/api/chats/${chatId}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch new messages");
+        }
+
+        const data = await response.json();
+
+        // Replace entire message state with new data
+        if (data.messages && data.messages.length > 0) {
+          // Update message IDs ref
+          messageIdsRef.current = new Set(
+            data.messages.map((msg: Message) => msg.id),
+          );
+
+          // Replace the entire messages state
+          setMessages([...data.messages].reverse());
+
+          // Update chat data
+          setCurrentChat(data);
+        }
+      } catch (err) {
+        console.error("Error polling for new messages:", err);
+      }
+    };
+
+    // Start polling every 3 seconds
+    const intervalId = setInterval(pollNewMessages, 3000);
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [chatId, loading]);
+
+  // Auto scroll to bottom when new messages arrive or on initial load
+  useEffect(() => {
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    // Use a small timeout to ensure the DOM has updated
+    const timer = setTimeout(scrollToBottom, 100);
+
+    return () => clearTimeout(timer);
   }, [messages]);
 
   // Mark messages as read when chat is opened
@@ -109,17 +163,11 @@ const ChatRoom = () => {
       if (!chatId) return;
 
       try {
-        // Current user - in production this would come from auth
-        const currentUser = "buyer123"; // Default user for demo
-
         await fetch(`/api/chats/${chatId}/read`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userId: currentUser,
-          }),
         });
       } catch (err) {
         console.error("Error marking messages as read:", err);
@@ -164,7 +212,6 @@ const ChatRoom = () => {
         },
         body: JSON.stringify({
           chatId,
-          sender: "buyer123", // Current user - in production this would come from auth
           content: newMessage.content,
         }),
       });

@@ -84,9 +84,8 @@ const ChatRoom = () => {
 
         const data = await response.json();
         setCurrentChat(data);
-        setMessages(data.messages || []);
+        setMessages(data.messages ? [...data.messages].reverse() : []);
 
-        // Update our messageIds ref with the initial message IDs
         messageIdsRef.current = new Set(
           data.messages?.map((m: Message) => m.id) || [],
         );
@@ -111,17 +110,8 @@ const ChatRoom = () => {
 
     const pollNewMessages = async () => {
       try {
-        // Construct URL with query parameter for messages since the last one
+        // Fetch the chat data without any query parameters for simplicity
         let url = `/api/chats/${chatId}`;
-
-        // Only add the since parameter if we have messages
-        if (messages.length > 0) {
-          // Convert the last received message's timestamp to a date object
-          // In a production app, you'd store and use the server's timestamp format
-          const lastMessageTime = new Date(Date.now() - 10000); // 10 seconds ago as a safety buffer
-          url += `?since=${encodeURIComponent(lastMessageTime.toISOString())}`;
-        }
-
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -130,39 +120,18 @@ const ChatRoom = () => {
 
         const data = await response.json();
 
-        // Only update if there are new messages
+        // Replace entire message state with new data
         if (data.messages && data.messages.length > 0) {
-          // Get current message IDs
-          const currentMessageIds = messageIdsRef.current;
-
-          // Filter out messages we already have by ID
-          const newMessages = data.messages.filter(
-            (msg: Message) => !currentMessageIds.has(msg.id),
+          // Update message IDs ref
+          messageIdsRef.current = new Set(
+            data.messages.map((msg: Message) => msg.id),
           );
 
-          if (newMessages.length > 0) {
-            // Update state with new messages
-            setMessages((prevMessages) => {
-              // Create a new array with all existing messages plus new ones
-              const updatedMessages = [
-                // ...prevMessages.filter((x) => x.id),
-                ...newMessages,
-                // .filter(
-                //   ({ id }: { id: string }) => !currentMessageIds.has(id),
-                // ),
-              ];
+          // Replace the entire messages state
+          setMessages([...data.messages].reverse());
 
-              // Update the ref with new message IDs
-              newMessages.forEach((msg: Message) =>
-                currentMessageIds.add(msg.id),
-              );
-
-              return updatedMessages;
-            });
-
-            // Update chat data
-            setCurrentChat(data);
-          }
+          // Update chat data
+          setCurrentChat(data);
         }
       } catch (err) {
         console.error("Error polling for new messages:", err);
@@ -174,7 +143,7 @@ const ChatRoom = () => {
 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
-  }, [chatId, loading, messages.length]); // Add messages.length as dependency to get fresh message IDs
+  }, [chatId, loading]);
 
   // Auto scroll to bottom when new messages arrive or on initial load
   useEffect(() => {

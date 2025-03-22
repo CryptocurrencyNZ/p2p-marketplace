@@ -1,1 +1,0 @@
-ALTER TABLE "userProfiles" ADD COLUMN "age" integer;

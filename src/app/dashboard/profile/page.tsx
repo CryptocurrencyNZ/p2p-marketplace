@@ -16,7 +16,15 @@ import {
   Camera,
   Save,
   Loader2,
+  ShieldCheck,
+  Instagram,
+  Facebook,
+  Linkedin,
 } from "lucide-react";
+import { auth } from "@/auth";
+import { convertRepToStar } from "@/lib/rep_system/repConversions";
+import { fetchUserElo } from '@/lib/rep_system/updateRep';
+import { profileEnd } from "console";
 
 // Define types for our profile data
 interface Listing {
@@ -52,6 +60,7 @@ interface ProfileApiResponse {
   created_at?: string;
   updated_at?: string;
   age?: number | null;
+  rep: number;
 }
 
 // Define type for profile update payload
@@ -74,14 +83,14 @@ interface EditedProfile {
 const initialUserData: UserProfile = {
   username: "",
   age: 0,
-  reputation: 0,
   totalTrades: 0,
+  reputation: 0,
   volumeTraded: "0 ETH",
   profileImage: "/api/placeholder/120/120",
   isVerified: false,
   joinedDate: "March 2023",
   bio: "",
-  currentListings: []
+  currentListings: [],
 };
 
 export default function ProfilePage() {
@@ -103,34 +112,33 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserProfile = async (): Promise<void> => {
       try {
-        const response = await fetch('/api/profile');
-        
+        const response = await fetch("/api/profile");
+
         if (!response.ok) {
-          throw new Error('Failed to fetch profile data');
+          throw new Error("Failed to fetch profile data");
         }
-        
+
         const profile: ProfileApiResponse = await response.json();
-        
-        // Update the userData state with fetched profile
+
         setUserData({
           ...initialUserData,
-          username: profile.username || 'Anonymous User',
-          bio: profile.bio || 'No bio provided',
-          profileImage: profile.avatar || '/pfp-placeholder.jpg',
+          username: profile.username || "Anonymous User",
+          bio: profile.bio || "No bio provided",
+          profileImage: profile.avatar || "/pfp-placeholder.jpg",
           age: profile.age || 0,
-          // Keep other default fields from initialUserData
+          reputation: profile.rep
         });
-        
-        // Also update the edited profile state
+
+        console.log(profile.rep);
+
         setEditedProfile({
-          username: profile.username || '',
-          age: userData.age, // Keep existing age
-          bio: profile.bio || '',
-          avatar: profile.avatar || '',
+          username: profile.username || "",
+          age: userData.age,
+          bio: profile.bio || "",
+          avatar: profile.avatar || "",
         });
-        
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error("Error fetching profile:", error);
       } finally {
         setLoading(false);
       }
@@ -143,7 +151,7 @@ export default function ProfilePage() {
   const handleSaveProfile = async (): Promise<void> => {
     setIsSaving(true);
     setSaveError("");
-    
+
     try {
       const payload: ProfileUpdatePayload = {
         username: editedProfile.username,
@@ -151,21 +159,20 @@ export default function ProfilePage() {
         avatar: editedProfile.avatar,
         age: editedProfile.age,
       };
-      
-      const response = await fetch('/api/profile', {
-        method: 'POST',
+
+      const response = await fetch("/api/profile", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
+        throw new Error(errorData.message || "Failed to update profile");
       }
-      
-      // Update local state with new profile data
+
       setUserData({
         ...userData,
         username: editedProfile.username,
@@ -173,29 +180,28 @@ export default function ProfilePage() {
         age: editedProfile.age,
         profileImage: editedProfile.avatar || userData.profileImage,
       });
-      
-      // Close the modal
+
       setIsEditModalOpen(false);
-      
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+      console.error("Error updating profile:", error);
+      setSaveError(
+        error instanceof Error ? error.message : "Failed to save profile"
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
   // Handle profile picture upload
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleProfilePictureChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // In a real application, you would upload this to a storage service
-    // For now, we'll create a base64 representation
     const reader = new FileReader();
     reader.onload = (event: ProgressEvent<FileReader>) => {
       const base64String = event.target?.result as string;
-      // Update the editedProfile state with the new avatar
       setEditedProfile({
         ...editedProfile,
         avatar: base64String,
@@ -247,38 +253,94 @@ export default function ProfilePage() {
                     <Star size={14} className="text-green-400" fill="#22c55e" />
                   </div>
                 )}
+                <div
+                  className="bg-blue-500/20 p-1 rounded-full"
+                  title="KYC Verified"
+                >
+                  <ShieldCheck size={14} className="text-blue-400" />
+                </div>
               </div>
 
               <div className="text-gray-400 text-sm">
                 Age: {userData.age} • Joined {userData.joinedDate}
               </div>
 
-              <p className="mt-2 text-sm text-gray-300 max-w-md break-words overflow-hidden">
+              <p className="mt-2 text-sm text-gray-300 max-w-[320px] break-words overflow-hidden">
   {userData.bio}
 </p>
 
-              <div className="mt-4 grid grid-cols-3 gap-4">
-                <div className="bg-gray-800/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-400">Reputation</p>
-                  <p className="font-semibold text-green-400">
-                    {userData.reputation}
-                  </p>
+              <div className="mt-4 grid grid-cols-3 gap-4 select-none scale-150 pl-32">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Reputation ({userData.reputation}★)</p>
+                  <div className="flex items-center gap-10">
+
+                    <div className="flex">
+                      {(() => {
+                        const rating = Math.min(
+                          Math.max(userData.reputation, 0),
+                          5
+                        );
+                        const fullStars = Math.floor(rating);
+                        const decimal = rating % 1;
+                        const stars = [];
+
+                        for (let i = 0; i < fullStars; i++) {
+                          stars.push(
+                            <Star
+                              key={i}
+                              size={20}
+                              className="text-green-400"
+                              fill="#22c55e
+
+"
+                            />
+                          );
+                        }
+
+                        if (decimal > 0 && stars.length < 5) {
+                          stars.push(
+                            <div
+                              key="partial"
+                              className="relative inline-block"
+                            >
+                              <Star
+                                size={20}
+                                className="text-green-400"
+                              />
+                              <div
+                                className="absolute top-0 left-0 overflow-hidden"
+                                style={{ width: `${decimal * 100}%` }}
+                              >
+                                <Star
+                                  size={20}
+                                  className="text-green-400"
+                                  fill="#22c55e"
+                                />
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        while (stars.length < 5) {
+                          stars.push(
+                            <Star
+                              key={stars.length}
+                              size={20}
+                              className="text-gray-400"
+                            />
+                          );
+                        }
+
+                        return stars;
+                      })()}
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-800/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-400">Trades</p>
-                  <p className="font-semibold text-white">
-                    {userData.totalTrades}
-                  </p>
-                </div>
-                <div className="bg-gray-800/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-700">
-                  <p className="text-xs text-gray-400">Volume</p>
-                  <p className="font-semibold text-white">
-                    {userData.volumeTraded}
-                  </p>
-                </div>
+                {/* Keep other stat boxes */}
+                
               </div>
 
-              <div className="mt-5 flex gap-3 items-center justify-center md:justify-start">
+              <div className="mt-10 flex gap-3 items-center justify-center md:justify-start">
                 <button
                   onClick={() => setIsEditModalOpen(true)}
                   className="bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium text-sm px-4 py-2 rounded-lg shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all duration-300"
@@ -288,6 +350,34 @@ export default function ProfilePage() {
                 <button className="bg-gray-800 text-white text-sm border border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-700 transition-all">
                   Share Profile
                 </button>
+                <a href="https://www.instagram.com/cryptocurrency_nz/">
+                  <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
+                    <Instagram size={25} className="text-white-400" />
+                  </button>
+                </a>
+                <a href="https://x.com/Aoraki_RangerNZ">
+                  <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 hover:scale-105 transition-all transform">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 50 50"
+                      width="25"
+                      height="23"
+                      className="text-white-400 fill-current"
+                    >
+                      <path d="M 5.9199219 6 L 20.582031 27.375 L 6.2304688 44 L 9.4101562 44 L 21.986328 29.421875 L 31.986328 44 L 44 44 L 28.681641 21.669922 L 42.199219 6 L 39.029297 6 L 27.275391 19.617188 L 17.933594 6 L 5.9199219 6 z M 9.7167969 8 L 16.880859 8 L 40.203125 42 L 33.039062 42 L 9.7167969 8 z" />
+                    </svg>
+                  </button>
+                </a>
+                <a href="https://www.facebook.com/AorakiRanger">
+                  <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
+                    <Facebook size={25} className="text-white-400" />
+                  </button>
+                </a>
+                <a href="https://www.linkedin.com/in/harry-satoshi/">
+                  <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
+                    <Linkedin size={25} className="text-white-400" />
+                  </button>
+                </a>
               </div>
             </div>
           </div>
@@ -399,8 +489,8 @@ export default function ProfilePage() {
                     No active listings
                   </h3>
                   <p className="text-gray-500 mt-1 max-w-sm mx-auto">
-                    You don't have any items listed for sale. Create a new listing
-                    to get started.
+                    You don&apos;t have any items listed for sale. Create a new
+                    listing to get started.
                   </p>
                   <Link
                     href="create"
@@ -478,7 +568,10 @@ export default function ProfilePage() {
               {/* Form Fields */}
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label
+                    htmlFor="username"
+                    className="block text-sm font-medium text-gray-400 mb-1"
+                  >
                     Username
                   </label>
                   <input
@@ -496,7 +589,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="age" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label
+                    htmlFor="age"
+                    className="block text-sm font-medium text-gray-400 mb-1"
+                  >
                     Age
                   </label>
                   <input
@@ -514,7 +610,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-400 mb-1">
+                  <label
+                    htmlFor="bio"
+                    className="block text-sm font-medium text-gray-400 mb-1"
+                  >
                     Bio
                   </label>
                   <textarea

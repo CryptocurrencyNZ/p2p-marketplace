@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { users, messages, userProfile, starredChats } from "@/db/schema";
-import { and, asc, eq, or, gt } from "drizzle-orm";
+import { and, asc, eq, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -15,7 +15,6 @@ export async function GET(
   const { id: conversationId } = await params;
   const url = new URL(request.url);
   const userId = session.user.id;
-  const sinceMessageId = url.searchParams.get('since');
 
   try {
     // Verify user is part of this conversation
@@ -63,38 +62,12 @@ export async function GET(
       .from(users)
       .where(eq(users.id, otherUserId));
 
-    // Query to get messages
-    let messagesQuery = db
+    // Get all messages in the conversation
+    const allMessages = await db
       .select()
       .from(messages)
-      .where(eq(messages.conversationID, conversationId));
-
-    // If sinceMessageId is provided, only get messages after that ID
-    if (sinceMessageId) {
-      // Find the message to determine its timestamp
-      const sinceMessage = await db
-        .select()
-        .from(messages)
-        .where(and(
-          eq(messages.id, sinceMessageId),
-          eq(messages.conversationID, conversationId)
-        ))
-        .limit(1);
-
-      // If we found the message, filter by messages created after it
-      if (sinceMessage.length > 0) {
-        messagesQuery = db
-          .select()
-          .from(messages)
-          .where(and(
-            eq(messages.conversationID, conversationId),
-            gt(messages.createdAt, sinceMessage[0].createdAt)
-          ));
-      }
-    }
-
-    // Order messages by creation time
-    const allMessages = await messagesQuery.orderBy(asc(messages.createdAt));
+      .where(eq(messages.conversationID, conversationId))
+      .orderBy(asc(messages.createdAt));
 
     // Format messages for client
     const formattedMessages = allMessages.map((msg) => ({

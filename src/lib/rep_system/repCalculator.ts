@@ -7,7 +7,7 @@ const weight = (rA: number): number => {
     return rA / (rA + 5000);
 }
 
-function repUpdate(rReciever: number, rRater: number, score: number, numTrades: number): number {
+export function repUpdate(rReciever: number, rRater: number, score: number, numTrades: number): number {
     if (score === 0) {
         return rReciever + 1;
     }
@@ -16,5 +16,3 @@ function repUpdate(rReciever: number, rRater: number, score: number, numTrades: 
     newRating = Math.round(newRating);
     return newRating;
 }
-
-console.log(repUpdate(1500, 2000, 1, 2));

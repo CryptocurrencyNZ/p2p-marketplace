@@ -37,6 +37,22 @@ interface Listing {
   featured: boolean;
 }
 
+// Define type for API listing response
+interface ApiListing {
+  id: number;
+  userId: string;
+  username: string;
+  createdAt: string;
+  title: string;
+  location: string;
+  price: string;
+  isBuy: boolean;
+  currency: string;
+  description: string;
+  onChainProof: boolean;
+  marginRate: string;
+}
+
 interface UserProfile {
   username: string;
   age: number;
@@ -137,6 +153,9 @@ export default function ProfilePage() {
           bio: profile.bio || "",
           avatar: profile.avatar || "",
         });
+        
+        // Fetch user listings after profile is loaded
+        fetchUserListings();
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -146,6 +165,59 @@ export default function ProfilePage() {
 
     fetchUserProfile();
   }, [userData.age]);
+  
+  // Fetch user listings
+  const fetchUserListings = async (): Promise<void> => {
+    try {
+      const response = await fetch("/api/listings/profile");
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch listings data");
+      }
+      
+      const listings: ApiListing[] = await response.json();
+      
+      // Transform API listings to the format expected by the UI
+      const formattedListings: Listing[] = listings.map((listing) => ({
+        id: String(listing.id),
+        title: listing.title,
+        price: `${listing.price} ${listing.currency}`,
+        category: listing.isBuy ? "Buy" : "Sell",
+        listed: formatDate(listing.createdAt),
+        views: 0, // Default value as views aren't provided by the API
+        featured: listing.onChainProof // Using onChainProof as featured flag
+      }));
+      
+      setUserData(prevData => ({
+        ...prevData,
+        currentListings: formattedListings
+      }));
+      
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+    }
+  };
+  
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
 
   // Handle profile update
   const handleSaveProfile = async (): Promise<void> => {

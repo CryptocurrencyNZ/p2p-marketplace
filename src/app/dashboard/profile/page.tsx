@@ -219,41 +219,248 @@ export default function ProfilePage() {
     fetchUserProfile();
   }, [fetchUserListings]); // Include fetchUserListings in the dependency array
 
+  // Handle profile picture upload
+  const handleProfilePictureChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Clear any previous errors
+    setSaveError("");
+    
+    // Check file size - 5MB limit
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setSaveError(`Image is too large. Maximum size is ${Math.round(maxSize / (1024 * 1024))}MB.`);
+      return;
+    }
+
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setSaveError('Please select a valid image file (JPEG, PNG, GIF, or WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = (event: ProgressEvent<FileReader>) => {
+      try {
+        const base64String = event.target?.result as string;
+        
+        // Create an image element to resize the image
+        const img = new window.Image();
+        
+        img.onload = () => {
+          try {
+            // Create a canvas to resize the image
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Calculate new dimensions (max 600px width/height for smaller payload)
+            const maxDimension = 600;
+            if (width > height && width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw resized image to canvas
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              // Get compressed base64 string with reduced quality (0.6 = 60% quality)
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+              
+              // Check final size (roughly estimate base64 size)
+              const estimatedSize = compressedBase64.length * 0.75; // base64 is ~33% larger than binary
+              if (estimatedSize > 1.5 * 1024 * 1024) {
+                setSaveError('Image is too large after compression. Please select a smaller image.');
+                return;
+              }
+              
+              console.log(`Image compressed from ${base64String.length} to ${compressedBase64.length} bytes`);
+              
+              setEditedProfile({
+                ...editedProfile,
+                avatar: compressedBase64,
+              });
+            }
+          } catch (error) {
+            console.error("Error processing image:", error);
+            setSaveError("Failed to process image. Please try another one.");
+          }
+        };
+        
+        img.onerror = () => {
+          setSaveError("Failed to load image. Please try another one.");
+        };
+        
+        img.src = base64String;
+      } catch (error) {
+        console.error("Error reading image:", error);
+        setSaveError("Failed to read image. Please try another one.");
+      }
+    };
+    
+    reader.onerror = () => {
+      setSaveError("Failed to read the selected file. Please try again.");
+    };
+    
+    reader.readAsDataURL(file);
+  };
+
   // Handle profile update
   const handleSaveProfile = async (): Promise<void> => {
+    // Prevent multiple rapid submissions
+    if (isSaving) return;
+    
     setIsSaving(true);
     setSaveError("");
 
     try {
+      // Validate fields
+      if (!editedProfile.username.trim()) {
+        throw new Error("Username is required");
+      }
+      
+      // Create a safe copy of the payload
       const payload: ProfileUpdatePayload = {
-        username: editedProfile.username,
-        bio: editedProfile.bio,
-        avatar: editedProfile.avatar,
-        age: editedProfile.age,
+        username: editedProfile.username.trim(),
+        bio: editedProfile.bio?.trim() || "",
+        age: editedProfile.age || 0,
       };
-
-      const response = await fetch("/api/profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update profile");
+      
+      // Only include avatar if it exists and has changed
+      if (editedProfile.avatar && editedProfile.avatar !== userData.profileImage) {
+        // Further reduce image size if it's very large
+        if (editedProfile.avatar.length > 500000) { // If over 500KB
+          console.log("Large image detected, applying additional compression");
+          try {
+            const img = new window.Image();
+            img.src = editedProfile.avatar;
+            await new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = () => {
+                console.error("Failed to load image for compression");
+                resolve(null);
+              };
+            });
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Reduce dimensions further for large images
+            const maxDim = 400; // Smaller than before
+            const scaleFactor = Math.min(maxDim / img.width, maxDim / img.height);
+            
+            canvas.width = img.width * scaleFactor;
+            canvas.height = img.height * scaleFactor;
+            
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              payload.avatar = canvas.toDataURL('image/jpeg', 0.5); // Higher compression
+              console.log(`Image further compressed to ${payload.avatar.length} bytes`);
+            } else {
+              // Fall back to original if canvas context fails
+              payload.avatar = editedProfile.avatar;
+            }
+          } catch (compressionError) {
+            console.error("Image compression failed:", compressionError);
+            // Fall back to original image
+            payload.avatar = editedProfile.avatar;
+          }
+        } else {
+          payload.avatar = editedProfile.avatar;
+        }
       }
 
-      setUserData({
-        ...userData,
-        username: editedProfile.username,
-        bio: editedProfile.bio,
-        age: editedProfile.age,
-        profileImage: editedProfile.avatar || userData.profileImage,
-      });
+      console.log("Saving profile with payload size:", 
+        JSON.stringify(payload).length, 
+        "bytes");
 
-      setIsEditModalOpen(false);
+      let responseText;
+      try {
+        // Use AbortController to set a timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30-second timeout
+        
+        const response = await fetch("/api/profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        
+        // Clear the timeout
+        clearTimeout(timeoutId);
+
+        // Store the response text for debugging
+        responseText = await response.text();
+        console.log(`API response: ${responseText}`);
+        
+        if (!response.ok) {
+          let errorData;
+          try {
+            // Try to parse the response as JSON
+            errorData = JSON.parse(responseText);
+          } catch (parseError) {
+            // If parsing fails, use the text directly
+            console.error("Failed to parse error response:", parseError);
+            errorData = { error: responseText || `Server returned ${response.status}` };
+          }
+          
+          // Check for duplicate username error
+          if (errorData.code === "DUPLICATE_USERNAME") {
+            throw new Error("This username is already taken. Please choose a different one.");
+          }
+          
+          throw new Error(errorData.error || errorData.message || errorData.details || 
+                         `Failed to update profile (${response.status})`);
+        }
+        
+        // Try to parse response as JSON if needed
+        let successData;
+        try {
+          successData = JSON.parse(responseText);
+          console.log("Parsed success response:", successData);
+        } catch (e) {
+          console.log("Response is not JSON or already parsed");
+        }
+
+        // Update local state with sanitized values
+        setUserData(prevData => ({
+          ...prevData,
+          username: payload.username,
+          bio: payload.bio || prevData.bio,
+          age: payload.age || prevData.age,
+          profileImage: payload.avatar || prevData.profileImage,
+        }));
+
+        setIsEditModalOpen(false);
+      } catch (fetchError) {
+        // Special handling for abort errors (timeout)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.error("Request timed out");
+          throw new Error("Request timed out. Please try again.");
+        }
+        
+        console.error("Fetch error details:", {
+          error: fetchError,
+          responseText,
+        });
+        throw fetchError;
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       setSaveError(
@@ -262,24 +469,6 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  // Handle profile picture upload
-  const handleProfilePictureChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ): void => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event: ProgressEvent<FileReader>) => {
-      const base64String = event.target?.result as string;
-      setEditedProfile({
-        ...editedProfile,
-        avatar: base64String,
-      });
-    };
-    reader.readAsDataURL(file);
   };
 
   // Show loading spinner while fetching data

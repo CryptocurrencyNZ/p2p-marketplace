@@ -53,13 +53,35 @@ export default function LoginPage() {
         <div className="space-y-1 p-6 pb-4">
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <Image
-                src="/CNZ_logo.png"
-                alt="Logo"
-                width={200}
-                height={100}
-                className="h-20 w-auto"
-              />
+
+      <div className="p-4 bg-gray-900 rounded-lg m-2 shadow-md border border-green-500">
+        <div className="text-center">
+          <div style={{ 
+            fontFamily: '"Press Start 2P", "VT323", "Silkscreen", monospace', 
+            letterSpacing: '1px',
+            WebkitFontSmoothing: 'none', 
+            MozOsxFontSmoothing: 'grayscale',
+            textRendering: 'geometricPrecision',
+            imageRendering: 'pixelated' as 'pixelated'
+          }}>
+            <div className="flex justify-center space-x-1 text-2xl font-bold">
+              <span className="text-green-500">NZ</span>
+              <span className="text-green-500">P2P</span>
+              <span className="text-green-500">DAO</span>
+            </div>
+            
+            <div className="mt-1 text-2xl font-bold">
+              <span className="text-green-500">Marketplace</span>
+              <span className="text-white ml-1">V.2</span>
+            </div>
+          </div>
+          
+          <div className="mt-2 flex justify-center space-x-1 text-4xl">
+          ⚔️
+          </div>
+        </div>
+      </div>
+              
               {/* Glow effect under logo */}
               <div className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-green-500/0 via-green-500/70 to-green-500/0 blur-sm"></div>
             </div>

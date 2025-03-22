@@ -19,6 +19,7 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
+import TradeStatusBar from "../components/tradesStatusBar";
 
 interface Message {
   id: string;
@@ -396,6 +397,11 @@ const ChatRoom = () => {
           {currentChat.user.name}'s public key
         </div>
       )}
+
+      {/* Trade status bar */}
+      <div className="px-4 py-6">
+        <TradeStatusBar />
+      </div>
 
       {/* Chat Messages */}
       <div

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 
 import { NZ_REGIONS } from '@/components/Map/filters';
-import { SUPPORTED_CURRENCIES } from '@/lib/crypto';
 
 const CreateListingPage = () => {
   // Define the currency type
@@ -186,7 +185,6 @@ const CreateListingPage = () => {
         price: parseFloat(amount),
         isBuy: listingType === 'buy',
         currency: selectedCurrency.symbol,
-        crypto_type: selectedCurrency.symbol, // Ensure this field is included
         descrption: description, // Note: This matches the typo in your API schema
         onChainProof: onChainProof,
         marginRate: marginRate

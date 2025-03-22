@@ -1,6 +1,6 @@
+// app/profile/page.tsx
 "use client";
 
-// app/profile/page.tsx
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,10 +23,16 @@ interface Listing {
   id: string;
   title: string;
   price: string;
-  category: string;
-  listed: string;
-  views: number;
-  featured: boolean;
+  currency: string;
+  description?: string;
+  isBuy: boolean;
+  location?: string;
+  marginRate?: string;
+  onChainProof?: boolean;
+  createdAt: string;
+  userId?: string;
+  username?: string;
+  isComplete?: boolean;
 }
 
 interface UserProfile {
@@ -97,6 +103,8 @@ export default function ProfilePage() {
   });
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string>("");
+  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user profile data
@@ -124,7 +132,7 @@ export default function ProfilePage() {
         // Also update the edited profile state
         setEditedProfile({
           username: profile.username || '',
-          age: userData.age, // Keep existing age
+          age: profile.age || 0, // Use profile.age directly instead of userData.age
           bio: profile.bio || '',
           avatar: profile.avatar || '',
         });
@@ -137,6 +145,32 @@ export default function ProfilePage() {
     };
 
     fetchUserProfile();
+  }, []); // Empty dependency array is fine here since we only want to fetch on mount
+  
+  // Fetch user listings
+  useEffect(() => {
+    const fetchUserListings = async (): Promise<void> => {
+      // Fetch listings when component mounts or tab changes
+      setListingsLoading(true);
+      try {
+        const response = await fetch('/api/listings/profile');
+
+        console.log(response);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch user listings');
+        }
+        
+        const listings = await response.json();
+        setAllListings(listings);
+      } catch (error) {
+        console.error('Error fetching user listings:', error);
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+
+    fetchUserListings();
   }, []);
 
   // Handle profile update
@@ -254,8 +288,8 @@ export default function ProfilePage() {
               </div>
 
               <p className="mt-2 text-sm text-gray-300 max-w-md break-words overflow-hidden">
-  {userData.bio}
-</p>
+                {userData.bio}
+              </p>
 
               <div className="mt-4 grid grid-cols-3 gap-4">
                 <div className="bg-gray-800/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-700">
@@ -339,7 +373,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Current Listings</h2>
               <Link
-                href="/create"
+                href="/dashboard/create"
                 className="text-green-400 text-sm flex items-center hover:text-green-300"
               >
                 <span>Create New</span>
@@ -349,47 +383,67 @@ export default function ProfilePage() {
 
             {/* Listings */}
             <div className="space-y-3">
-              {userData.currentListings && userData.currentListings.length > 0 ? (
-                userData.currentListings.map((listing) => (
-                  <Link href={`/listing/${listing.id}`} key={listing.id}>
-                    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mt-2 hover:bg-gray-800 transition-all duration-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{listing.title}</h3>
-                            {listing.featured && (
-                              <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
-                                Featured
-                              </span>
-                            )}
+              {listingsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="animate-spin text-green-400 mr-2" size={24} />
+                  <span>Loading listings...</span>
+                </div>
+              ) : allListings && allListings.filter(listing => !listing.isComplete).length > 0 ? (
+                allListings
+                  .filter(listing => !listing.isComplete)
+                  .map((listing) => (
+                    <Link href={`/dashboard/listing/${listing.id}`} key={listing.id}>
+                      <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mt-2 hover:bg-gray-800 transition-all duration-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{listing.title}</h3>
+                              {listing.isBuy ? (
+                                <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full">
+                                  Buy
+                                </span>
+                              ) : (
+                                <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
+                                  Sell
+                                </span>
+                              )}
+                              {listing.onChainProof && (
+                                <span className="bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-full">
+                                  Verified
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
+                              {listing.location && (
+                                <div className="flex items-center gap-1">
+                                  <Tag size={14} />
+                                  <span>{listing.location}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1">
+                                <Wallet size={14} />
+                                <span>{listing.price} {listing.currency}</span>
+                              </div>
+                              {listing.marginRate && (
+                                <div className="flex items-center gap-1">
+                                  <BarChart3 size={14} />
+                                  <span>{listing.marginRate}% margin</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
-                            <div className="flex items-center gap-1">
-                              <Tag size={14} />
-                              <span>{listing.category}</span>
+                          <div className="flex items-center">
+                            <div className="text-right mr-2">
+                              <div className="text-gray-400 text-xs">
+                                {new Date(listing.createdAt).toLocaleDateString()}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Wallet size={14} />
-                              <span>{listing.price}</span>
-                            </div>
+                            <ChevronRight size={20} className="text-gray-600" />
                           </div>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="text-right mr-2">
-                            <div className="text-gray-400 text-xs">
-                              {listing.listed}
-                            </div>
-                            <div className="flex items-center text-gray-400 text-xs mt-1">
-                              <BarChart3 size={12} className="mr-1" />
-                              <span>{listing.views} views</span>
-                            </div>
-                          </div>
-                          <ChevronRight size={20} className="text-gray-600" />
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                ))
+                    </Link>
+                  ))
               ) : (
                 <div className="text-center py-10">
                   <div className="bg-gray-800/50 inline-flex rounded-full p-3 mb-4">
@@ -403,7 +457,8 @@ export default function ProfilePage() {
                     to get started.
                   </p>
                   <Link
-                    href="create"
+                    href="/dashboard/create"
+
                     className="mt-4 inline-flex bg-green-600 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
                   >
                     Create Listing
@@ -415,8 +470,73 @@ export default function ProfilePage() {
         )}
 
         {activeTab === "history" && (
-          <div className="flex items-center justify-center h-40 text-gray-500">
-            Trade history will be displayed here
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Trade History</h2>
+            </div>
+            
+            {listingsLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="animate-spin text-green-400 mr-2" size={24} />
+                <span>Loading trade history...</span>
+              </div>
+            ) : allListings && allListings.filter(listing => listing.isComplete).length > 0 ? (
+              <div className="space-y-3">
+                {allListings
+                  .filter(listing => listing.isComplete)
+                  .map((trade) => (
+                    <div key={trade.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:bg-gray-800 transition-all duration-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{trade.title}</h3>
+                            {trade.isBuy ? (
+                              <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full">
+                                Bought
+                              </span>
+                            ) : (
+                              <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
+                                Sold
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Wallet size={14} />
+                              <span>{trade.price} {trade.currency}</span>
+                            </div>
+                            {trade.username && trade.username !== userData.username && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-4 h-4 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center text-xs">
+                                  {trade.username.charAt(0).toUpperCase()}
+                                </div>
+                                <span>{trade.username}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-gray-400 text-xs">
+                            {new Date(trade.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <div className="bg-gray-800/50 inline-flex rounded-full p-3 mb-4">
+                  <BarChart3 size={24} className="text-gray-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-300">
+                  No trade history
+                </h3>
+                <p className="text-gray-500 mt-1 max-w-sm mx-auto">
+                  You haven't completed any trades yet. Active listings will appear in your trade history once they are completed.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

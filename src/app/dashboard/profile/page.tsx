@@ -1,7 +1,7 @@
 "use client";
 
 // app/profile/page.tsx
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -124,50 +124,29 @@ export default function ProfilePage() {
   const [saveError, setSaveError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async (): Promise<void> => {
-      try {
-        const response = await fetch("/api/profile");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch profile data");
-        }
-
-        const profile: ProfileApiResponse = await response.json();
-
-        setUserData({
-          ...initialUserData,
-          username: profile.username || "Anonymous User",
-          bio: profile.bio || "No bio provided",
-          profileImage: profile.avatar || "/pfp-placeholder.jpg",
-          age: profile.age || 0,
-          reputation: profile.rep
-        });
-
-        console.log(profile.rep);
-
-        setEditedProfile({
-          username: profile.username || "",
-          age: userData.age,
-          bio: profile.bio || "",
-          avatar: profile.avatar || "",
-        });
-        
-        // Fetch user listings after profile is loaded
-        fetchUserListings();
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [userData.age]);
+  // Helper function to format date - wrapped in useCallback to prevent recreations
+  const formatDate = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  }, []); // No dependencies needed as this function doesn't rely on any state or props
   
   // Fetch user listings
-  const fetchUserListings = async (): Promise<void> => {
+  const fetchUserListings = useCallback(async (): Promise<void> => {
     try {
       const response = await fetch("/api/listings/profile");
       
@@ -196,28 +175,49 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Error fetching listings:", error);
     }
-  };
-  
-  // Helper function to format date
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  };
+  }, [formatDate]); // Include formatDate as a dependency, which is now stable
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async (): Promise<void> => {
+      try {
+        const response = await fetch("/api/profile");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile data");
+        }
+
+        const profile: ProfileApiResponse = await response.json();
+
+        setUserData({
+          ...initialUserData,
+          username: profile.username || "Anonymous User",
+          bio: profile.bio || "No bio provided",
+          profileImage: profile.avatar || "/pfp-placeholder.jpg",
+          age: profile.age || 0,
+          reputation: profile.rep
+        });
+
+        console.log(profile.rep);
+
+        setEditedProfile({
+          username: profile.username || "",
+          age: profile.age || 0,
+          bio: profile.bio || "",
+          avatar: profile.avatar || "",
+        });
+        
+        // Fetch user listings after profile is loaded
+        fetchUserListings();
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [fetchUserListings]); // Include fetchUserListings in the dependency array
 
   // Handle profile update
   const handleSaveProfile = async (): Promise<void> => {
@@ -449,6 +449,13 @@ export default function ProfilePage() {
                   <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
                     <Linkedin size={25} className="text-white-400" />
                   </button>
+                </a>
+                <a href = "https://steamcommunity.com/id/Satoshi">
+                <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1 py-1 rounded-lg hover:bg-gray-700 transition-all">
+                
+                  <svg fill="#ffffff" width="29px" height="29px" viewBox="0 0 24 24" role="img" xmlns="http://www.w3.org/2000/svg"><title>Steam icon</title><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></svg>
+
+                </button>
                 </a>
               </div>
             </div>

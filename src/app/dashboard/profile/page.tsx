@@ -16,6 +16,10 @@ import {
   Camera,
   Save,
   Loader2,
+  ShieldCheck,
+  Instagram,
+  Facebook,
+  Linkedin, 
 } from "lucide-react";
 
 // Define types for our profile data
@@ -247,6 +251,9 @@ export default function ProfilePage() {
                     <Star size={14} className="text-green-400" fill="#22c55e" />
                   </div>
                 )}
+                <div className="bg-blue-500/20 p-1 rounded-full" title="KYC Verified">
+                  <ShieldCheck size={14} className="text-blue-400" />
+                </div>
               </div>
 
               <div className="text-gray-400 text-sm">
@@ -289,6 +296,27 @@ export default function ProfilePage() {
                 <button className="bg-gray-800 text-white text-sm border border-gray-700 px-4 py-2 rounded-lg hover:bg-gray-700 transition-all">
                   Share Profile
                 </button>
+
+                <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
+                <Instagram size={25} className="text-white-400" />
+
+                </button>
+            
+                <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 hover:scale-105 transition-all transform">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="25" height="23" className="text-white-400 fill-current">
+                <path d="M 5.9199219 6 L 20.582031 27.375 L 6.2304688 44 L 9.4101562 44 L 21.986328 29.421875 L 31.986328 44 L 44 44 L 28.681641 21.669922 L 42.199219 6 L 39.029297 6 L 27.275391 19.617188 L 17.933594 6 L 5.9199219 6 z M 9.7167969 8 L 16.880859 8 L 40.203125 42 L 33.039062 42 L 9.7167969 8 z"/>
+                </svg>
+                </button>
+
+                <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
+                <Facebook size={25} className="text-white-400" />
+
+                </button>
+                <a href="https://www.linkedin.com/in/harry-satoshi/">
+                <button className="bg-gray-800 text-white text-sm border border-gray-700 px-1.5 py-1.5 rounded-lg hover:bg-gray-700 transition-all">
+                <Linkedin size={25} className="text-white-400" />
+                </button>
+                </a>
               </div>
             </div>
           </div>

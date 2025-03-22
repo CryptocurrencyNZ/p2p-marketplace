@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Send,
@@ -15,111 +16,129 @@ import {
   Copy,
   ExternalLink,
   Shield,
+  AlertCircle,
   FileText,
 } from "lucide-react";
 
-const Page = async ({ params }: { params: Promise<{ slug: string }> }) => {
-  const { slug: chatId } = await params;
-  return <ChatApp {...{ chatId }} />;
-};
+interface Message {
+  id: string;
+  sender: string;
+  content: string;
+  timestamp: string;
+  status: string;
+  isFile?: boolean;
+  fileType?: string;
+  fileName?: string;
+  fileSize?: string;
+}
 
-const ChatApp = ({ chatId = "1" }: { chatId: string }) => {
+interface ChatUser {
+  name: string;
+  address: string;
+  avatar: string;
+  status: string;
+  lastSeen: string;
+  verified: boolean;
+}
+
+interface ChatData {
+  id: string;
+  user: ChatUser;
+  messages: Message[];
+  starred: boolean;
+  encrypted: boolean;
+  verified: boolean;
+}
+
+const ChatRoom = () => {
+  const router = useRouter();
+  const { id: chatId } = useParams() as { id: string };
+
   // References
-  const messageInputRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Mock data for the current chat
-  const [currentChat] = useState({
-    id: chatId,
-    user: {
-      name: "Alice Crypto",
-      address: "0xF3b217A5F7A9a4D", // Full address for the actual chat page
-      avatar: "/api/placeholder/48/48",
-      status: "online",
-      lastSeen: "Active now",
-    },
-    starred: true,
-    encrypted: true,
-    verified: true,
-  });
-
-  // Message states
+  // State for chat data
+  const [currentChat, setCurrentChat] = useState<ChatData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: "m1",
-      sender: "them",
-      content:
-        "Hey there, have you checked the latest token price? I think we might want to consider rebalancing our liquidity positions.",
-      timestamp: "10:32 AM",
-      status: "read",
-    },
-    {
-      id: "m2",
-      sender: "me",
-      content: "HELLLOOOO",
-      timestamp: "10:35 AM",
-      status: "read",
-    },
-    {
-      id: "m3",
-      sender: "them",
-      content:
-        "What do you think about moving some assets to that new yield farming protocol?",
-      timestamp: "10:37 AM",
-      status: "read",
-    },
-    {
-      id: "m4",
-      sender: "me",
-      content: "HELLLOOO",
-      timestamp: "10:40 AM",
-      status: "read",
-    },
-    {
-      id: "m5",
-      sender: "them",
-      content: "HELLLOOO",
-      timestamp: "10:42 AM",
-      status: "read",
-    },
-    {
-      id: "m6",
-      sender: "them",
-      isFile: true,
-      fileType: "pdf",
-      fileName: "SecurityAudit_Report.pdf",
-      fileSize: "2.4 MB",
-      content: "HELLLOOO",
-      timestamp: "10:43 AM",
-      status: "read",
-    },
-    {
-      id: "m7",
-      sender: "me",
-      content: "HELLLOOO",
-      timestamp: "10:48 AM",
-      status: "sent",
-    },
-    {
-      id: "m8",
-      sender: "me",
-      content:
-        "By the way, have you set up your hardware wallet for the new chain yet?",
-      timestamp: "10:50 AM",
-      status: "delivered",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  // Auto scroll to bottom when new messages arrive
+  // Fetch chat data from API
+  useEffect(() => {
+    const fetchChatData = async () => {
+      try {
+        setLoading(true);
+        
+        const response = await fetch(`/api/chats/${chatId}`);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+        if (!response.ok) {
+          throw new Error(response.status === 404 
+            ? "Chat not found" 
+            : "Failed to fetch chat data");
+        }
+
+        const data = await response.json();
+        setCurrentChat(data);
+        setMessages(data.messages || []);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching chat data:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (chatId) {
+      fetchChatData();
+    }
+  }, [chatId]);
+
+  // Auto scroll to bottom when new messages arrive or on initial load
+  useEffect(() => {
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+    
+    // Use a small timeout to ensure the DOM has updated
+    const timer = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  // Mark messages as read when chat is opened
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (!chatId) return;
+
+      try {
+        await fetch(`/api/chats/${chatId}/read`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        console.error("Error marking messages as read:", err);
+      }
+    };
+
+    if (currentChat) {
+      markMessagesAsRead();
+    }
+  }, [chatId, currentChat]);
+
+  // Handle sending a message
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() === "") return;
 
-    // Add new message to the list
-    const newMessage = {
-      id: `m${messages.length + 1}`,
+    // Add new message to the list with "sending" status
+    const tempId = `temp-${Date.now()}`;
+    const newMessage: Message = {
+      id: tempId,
       sender: "me",
       content: message,
       timestamp: new Date().toLocaleTimeString([], {
@@ -129,63 +148,79 @@ const ChatApp = ({ chatId = "1" }: { chatId: string }) => {
       status: "sending",
     };
 
-    setMessages([...messages, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
     setMessage("");
 
-    // Simulate message sending status updates
-    setTimeout(() => {
+    // Focus back on input after sending
+    messageInputRef.current?.focus();
+
+    try {
+      // Send message to API
+      const response = await fetch("/api/chats/send-message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId,
+          content: newMessage.content,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      const data = await response.json();
+
+      // Replace the temporary message with the one from the server
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === tempId ? data.message : msg)),
+      );
+    } catch (err) {
+      console.error("Error sending message:", err);
+
+      // Update message status to error
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === newMessage.id ? { ...msg, status: "sent" } : msg,
+          msg.id === tempId ? { ...msg, status: "error" } : msg,
         ),
       );
+    }
+  };
 
-      setTimeout(() => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === newMessage.id ? { ...msg, status: "delivered" } : msg,
-          ),
-        );
+  // Toggle starred status
+  const handleToggleStar = async () => {
+    if (!currentChat) return;
 
-        // Simulate a response after 2-3 seconds
-        if (Math.random() > 0.3) {
-          setTimeout(
-            () => {
-              const responses = [
-                "That's interesting, tell me more.",
-                "I need to think about this approach.",
-                "Yes, I've been working on that setup.",
-                "Have you considered the gas fees on that network?",
-                "The tokenomics look solid, but I'm concerned about the team's background.",
-              ];
+    try {
+      const response = await fetch("/api/chats/star", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId,
+          starred: !currentChat.starred,
+        }),
+      });
 
-              const responseMsg = {
-                id: `m${messages.length + 2}`,
-                sender: "them",
-                content:
-                  responses[Math.floor(Math.random() * responses.length)],
-                timestamp: new Date().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                status: "read",
-              };
+      if (!response.ok) {
+        throw new Error("Failed to update star status");
+      }
 
-              setMessages((prev) => [...prev, responseMsg]);
+      // Update local state
+      setCurrentChat((prev) =>
+        prev ? { ...prev, starred: !prev.starred } : null,
+      );
+    } catch (err) {
+      console.error("Error updating star status:", err);
+    }
+  };
 
-              setTimeout(() => {
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === newMessage.id ? { ...msg, status: "read" } : msg,
-                  ),
-                );
-              }, 1000);
-            },
-            2000 + Math.random() * 1000,
-          );
-        }
-      }, 1000);
-    }, 800);
+  // Handle back button
+  const handleBack = () => {
+    router.push("/dashboard/messages");
   };
 
   // Render message status icon
@@ -199,17 +234,54 @@ const ChatApp = ({ chatId = "1" }: { chatId: string }) => {
         return <CheckCheck size={14} className="text-gray-400" />;
       case "read":
         return <CheckCheck size={14} className="text-green-400" />;
+      case "error":
+        return <AlertCircle size={14} className="text-red-400" />;
       default:
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white items-center justify-center">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-gray-700 rounded w-48"></div>
+          <div className="h-4 bg-gray-700 rounded w-36"></div>
+          <div className="h-10 bg-gray-700 rounded w-64 mt-6"></div>
+        </div>
+        <p className="text-gray-400 text-sm mt-6">Loading chat...</p>
+      </div>
+    );
+  }
+
+  if (error || !currentChat) {
+    return (
+      <div className="flex flex-col h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white items-center justify-center">
+        <AlertCircle size={32} className="text-red-500 mb-4" />
+        <h3 className="text-lg font-medium text-white">Error loading chat</h3>
+        <p className="text-gray-400 text-sm mt-1">
+          {error || "Chat not found"}
+        </p>
+        <button
+          onClick={handleBack}
+          className="mt-6 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white flex items-center"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Back to messages
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       {/* Chat Header */}
       <header className="px-4 py-3 border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center">
-          <button className="mr-2 p-1.5 text-gray-400 hover:text-green-400 rounded-lg transition-all duration-200 md:hidden">
+          <button
+            onClick={handleBack}
+            className="mr-2 p-1.5 text-gray-400 hover:text-green-400 rounded-lg transition-all duration-200"
+          >
             <ArrowLeft size={20} />
           </button>
 
@@ -250,7 +322,10 @@ const ChatApp = ({ chatId = "1" }: { chatId: string }) => {
           <button className="p-2 text-gray-400 hover:text-green-400 rounded-lg transition-all duration-200">
             <Video size={18} />
           </button>
-          <button className="p-2 text-gray-400 hover:text-green-400 rounded-lg transition-all duration-200">
+          <button
+            onClick={handleToggleStar}
+            className="p-2 text-gray-400 hover:text-green-400 rounded-lg transition-all duration-200"
+          >
             <Star
               size={18}
               className={
@@ -398,4 +473,4 @@ const ChatApp = ({ chatId = "1" }: { chatId: string }) => {
   );
 };
 
-export default Page;
+export default ChatRoom;

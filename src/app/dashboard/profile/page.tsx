@@ -1,7 +1,7 @@
 "use client";
 
 // app/profile/page.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -15,59 +15,204 @@ import {
   X,
   Camera,
   Save,
+  Loader2,
 } from "lucide-react";
 
-// Mock user data - in a real app this would come from your API
-const userData = {
-  username: "Crypto_Trader99",
-  age: 27,
-  reputation: 156,
-  totalTrades: 38,
-  volumeTraded: "12.45 ETH",
-  profileImage: "/api/placeholder/120/120", // Replace with actual image
-  isVerified: true,
+// Define types for our profile data
+interface Listing {
+  id: string;
+  title: string;
+  price: string;
+  category: string;
+  listed: string;
+  views: number;
+  featured: boolean;
+}
+
+interface UserProfile {
+  username: string;
+  age: number;
+  reputation: number;
+  totalTrades: number;
+  volumeTraded: string;
+  profileImage: string;
+  isVerified: boolean;
+  joinedDate: string;
+  bio: string;
+  currentListings: Listing[];
+}
+
+// Define type for API response
+interface ProfileApiResponse {
+  id?: number;
+  auth_id?: string;
+  username: string;
+  bio?: string | null;
+  avatar?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  age?: number | null;
+}
+
+// Define type for profile update payload
+interface ProfileUpdatePayload {
+  username: string;
+  bio?: string;
+  avatar?: string;
+  age?: number;
+}
+
+// Define type for edited profile state
+interface EditedProfile {
+  username: string;
+  age: number;
+  bio: string;
+  avatar: string;
+}
+
+// Initial placeholder data (will be replaced with API data)
+const initialUserData: UserProfile = {
+  username: "",
+  age: 0,
+  reputation: 0,
+  totalTrades: 0,
+  volumeTraded: "0 ETH",
+  profileImage: "/api/placeholder/120/120",
+  isVerified: false,
   joinedDate: "March 2023",
-  bio: "Crypto enthusiast and NFT collector since 2021. Looking for rare digital assets and exclusive collections.",
-  currentListings: [
-    {
-      id: "1",
-      title: "Premium NFT Collection",
-      price: "2.5 ETH",
-      category: "Digital Art",
-      listed: "2 days ago",
-      views: 42,
-      featured: true,
-    },
-    {
-      id: "2",
-      title: "Gaming Assets Bundle",
-      price: "0.75 ETH",
-      category: "Gaming",
-      listed: "1 week ago",
-      views: 28,
-      featured: false,
-    },
-    {
-      id: "3",
-      title: "Rare Collectible Item",
-      price: "1.2 ETH",
-      category: "Collectibles",
-      listed: "3 days ago",
-      views: 19,
-      featured: false,
-    },
-  ],
+  bio: "",
+  currentListings: []
 };
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState("listings");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editedProfile, setEditedProfile] = useState({
-    username: userData.username,
-    age: userData.age,
-    bio: "Crypto enthusiast and NFT collector since 2021. Looking for rare digital assets and exclusive collections.", // Added bio field
+  const [userData, setUserData] = useState<UserProfile>(initialUserData);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>("listings");
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [editedProfile, setEditedProfile] = useState<EditedProfile>({
+    username: "",
+    age: 0,
+    bio: "",
+    avatar: "",
   });
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async (): Promise<void> => {
+      try {
+        const response = await fetch('/api/profile');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile data');
+        }
+        
+        const profile: ProfileApiResponse = await response.json();
+        
+        // Update the userData state with fetched profile
+        setUserData({
+          ...initialUserData,
+          username: profile.username || 'Anonymous User',
+          bio: profile.bio || 'No bio provided',
+          profileImage: profile.avatar || '/pfp-placeholder.jpg',
+          age: profile.age || 0,
+          // Keep other default fields from initialUserData
+        });
+        
+        // Also update the edited profile state
+        setEditedProfile({
+          username: profile.username || '',
+          age: userData.age, // Keep existing age
+          bio: profile.bio || '',
+          avatar: profile.avatar || '',
+        });
+        
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  // Handle profile update
+  const handleSaveProfile = async (): Promise<void> => {
+    setIsSaving(true);
+    setSaveError("");
+    
+    try {
+      const payload: ProfileUpdatePayload = {
+        username: editedProfile.username,
+        bio: editedProfile.bio,
+        avatar: editedProfile.avatar,
+        age: editedProfile.age,
+      };
+      
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+      
+      // Update local state with new profile data
+      setUserData({
+        ...userData,
+        username: editedProfile.username,
+        bio: editedProfile.bio,
+        age: editedProfile.age,
+        profileImage: editedProfile.avatar || userData.profileImage,
+      });
+      
+      // Close the modal
+      setIsEditModalOpen(false);
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle profile picture upload
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // In a real application, you would upload this to a storage service
+    // For now, we'll create a base64 representation
+    const reader = new FileReader();
+    reader.onload = (event: ProgressEvent<FileReader>) => {
+      const base64String = event.target?.result as string;
+      // Update the editedProfile state with the new avatar
+      setEditedProfile({
+        ...editedProfile,
+        avatar: base64String,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Show loading spinner while fetching data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <Loader2 className="animate-spin text-green-400 mr-2" size={24} />
+        <span>Loading profile...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white pb-20">
@@ -205,68 +350,68 @@ export default function ProfilePage() {
 
             {/* Listings */}
             <div className="space-y-3">
-              {userData.currentListings.map((listing) => (
-                <Link href={`/listing/${listing.id}`} key={listing.id}>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mt-2 hover:bg-gray-800 transition-all duration-200">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{listing.title}</h3>
-                          {listing.featured && (
-                            <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
-                              Featured
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Tag size={14} />
-                            <span>{listing.category}</span>
+              {userData.currentListings && userData.currentListings.length > 0 ? (
+                userData.currentListings.map((listing) => (
+                  <Link href={`/listing/${listing.id}`} key={listing.id}>
+                    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mt-2 hover:bg-gray-800 transition-all duration-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{listing.title}</h3>
+                            {listing.featured && (
+                              <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
+                                Featured
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Wallet size={14} />
-                            <span>{listing.price}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <div className="text-right mr-2">
-                          <div className="text-gray-400 text-xs">
-                            {listing.listed}
-                          </div>
-                          <div className="flex items-center text-gray-400 text-xs mt-1">
-                            <BarChart3 size={12} className="mr-1" />
-                            <span>{listing.views} views</span>
+                          <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Tag size={14} />
+                              <span>{listing.category}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Wallet size={14} />
+                              <span>{listing.price}</span>
+                            </div>
                           </div>
                         </div>
-                        <ChevronRight size={20} className="text-gray-600" />
+                        <div className="flex items-center">
+                          <div className="text-right mr-2">
+                            <div className="text-gray-400 text-xs">
+                              {listing.listed}
+                            </div>
+                            <div className="flex items-center text-gray-400 text-xs mt-1">
+                              <BarChart3 size={12} className="mr-1" />
+                              <span>{listing.views} views</span>
+                            </div>
+                          </div>
+                          <ChevronRight size={20} className="text-gray-600" />
+                        </div>
                       </div>
                     </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <div className="bg-gray-800/50 inline-flex rounded-full p-3 mb-4">
+                    <Tag size={24} className="text-gray-500" />
                   </div>
-                </Link>
-              ))}
-            </div>
-
-            {userData.currentListings.length === 0 && (
-              <div className="text-center py-10">
-                <div className="bg-gray-800/50 inline-flex rounded-full p-3 mb-4">
-                  <Tag size={24} className="text-gray-500" />
+                  <h3 className="text-lg font-medium text-gray-300">
+                    No active listings
+                  </h3>
+                  <p className="text-gray-500 mt-1 max-w-sm mx-auto">
+                    You don't have any items listed for sale. Create a new listing
+                    to get started.
+                  </p>
+                  <Link
+                    href="/create"
+                    className="mt-4 inline-flex bg-green-600 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
+                  >
+                    Create Listing
+                  </Link>
                 </div>
-                <h3 className="text-lg font-medium text-gray-300">
-                  No active listings
-                </h3>
-                <p className="text-gray-500 mt-1 max-w-sm mx-auto">
-                  You don't have any items listed for sale. Create a new listing
-                  to get started.
-                </p>
-                <Link
-                  href="/create"
-                  className="mt-4 inline-flex bg-green-600 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
-                >
-                  Create Listing
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
@@ -303,7 +448,7 @@ export default function ProfilePage() {
                 <div className="relative mb-3">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-700 border-2 border-gray-700 relative">
                     <Image
-                      src={userData.profileImage}
+                      src={editedProfile.avatar || userData.profileImage}
                       alt={userData.username}
                       width={120}
                       height={120}
@@ -314,6 +459,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1.5 border border-gray-800 shadow-lg hover:bg-green-400 transition-colors"
+                    type="button"
                   >
                     <Camera size={14} className="text-gray-900" />
                   </button>
@@ -322,12 +468,7 @@ export default function ProfilePage() {
                     ref={fileInputRef}
                     className="hidden"
                     accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        // Handle file upload in a real app
-                        console.log("File selected:", e.target.files[0]);
-                      }
-                    }}
+                    onChange={handleProfilePictureChange}
                   />
                 </div>
                 <p className="text-sm text-gray-400">
@@ -338,13 +479,14 @@ export default function ProfilePage() {
               {/* Form Fields */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-400 mb-1">
                     Username
                   </label>
                   <input
+                    id="username"
                     type="text"
                     value={editedProfile.username}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setEditedProfile({
                         ...editedProfile,
                         username: e.target.value,
@@ -355,13 +497,14 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="age" className="block text-sm font-medium text-gray-400 mb-1">
                     Age
                   </label>
                   <input
+                    id="age"
                     type="number"
                     value={editedProfile.age}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setEditedProfile({
                         ...editedProfile,
                         age: parseInt(e.target.value) || 0,
@@ -372,12 +515,13 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-400 mb-1">
                     Bio
                   </label>
                   <textarea
+                    id="bio"
                     value={editedProfile.bio}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                       setEditedProfile({
                         ...editedProfile,
                         bio: e.target.value,
@@ -390,6 +534,12 @@ export default function ProfilePage() {
                     Brief description about yourself (max 200 characters)
                   </p>
                 </div>
+
+                {saveError && (
+                  <div className="bg-red-900/40 border border-red-800 text-red-300 px-3 py-2 rounded text-sm">
+                    {saveError}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -397,20 +547,28 @@ export default function ProfilePage() {
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+                disabled={isSaving}
+                type="button"
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  // In a real app, you would save changes to the backend here
-                  console.log("Profile updated:", editedProfile);
-                  setIsEditModalOpen(false);
-                  // Show a success message or toast notification
-                }}
-                className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-md shadow-sm hover:shadow-[0_0_10px_rgba(34,197,94,0.3)] flex items-center gap-1.5 transition-all"
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 text-gray-900 font-medium rounded-md shadow-sm hover:shadow-[0_0_10px_rgba(34,197,94,0.3)] flex items-center gap-1.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                type="button"
               >
-                <Save size={16} />
-                Save Changes
+                {isSaving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Save Changes
+                  </>
+                )}
               </button>
             </div>
           </div>

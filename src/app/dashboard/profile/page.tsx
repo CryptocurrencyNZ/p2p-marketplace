@@ -458,6 +458,7 @@ export default function ProfilePage() {
                   </p>
                   <Link
                     href="/dashboard/create"
+
                     className="mt-4 inline-flex bg-green-600 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
                   >
                     Create Listing

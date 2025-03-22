@@ -1,13 +1,12 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { messages } from "@/db/schema";
+import { messages, tradeSession } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const SendMessageSchema = z.object({
-  chatId: z.string().optional(),
-  receiverId: z.string().optional(),
+  sessionId: z.string(),
   content: z.string().min(1),
 });
 
@@ -20,61 +19,39 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
     const data = SendMessageSchema.parse(payload);
-    const senderId = session.user.id;
-
-    // Create a new conversation ID if one doesn't exist
-    let conversationId = data.chatId;
-    if (!conversationId) {
-      if (!data.receiverId) {
-        return NextResponse.json(
-          { error: "Either chatId or receiverId must be provided" },
-          { status: 400 }
-        );
-      }
-      // Generate a new conversation ID that includes both user IDs to make it consistent
-      // This ensures if the same two users chat again, we can find their conversation
-      const sortedIds = [senderId, data.receiverId].sort();
-      conversationId = `conv_${sortedIds[0]}_${sortedIds[1]}`;
-    }
-
-    // We need to ensure receiverId is defined before inserting
-    if (!data.receiverId && !conversationId) {
+    const userId = session.user.id;
+    
+    // Get the trade session to determine if user is vendor or customer
+    const tradeSessionRecords = await db
+      .select()
+      .from(tradeSession)
+      .where(eq(tradeSession.id, data.sessionId));
+    
+    if (!tradeSessionRecords || tradeSessionRecords.length === 0) {
       return NextResponse.json(
-        { error: "Receiver ID is required when starting a new conversation" },
-        { status: 400 }
+        { error: "Trade session not found" },
+        { status: 404 }
+      );
+    }
+    
+    const tradeSessionRecord = tradeSessionRecords[0];
+    
+    // Check if user is part of this trade session
+    const isVendor = tradeSessionRecord.vendor_id === userId;
+    const isCustomer = tradeSessionRecord.customer_id === userId;
+    
+    if (!isVendor && !isCustomer) {
+      return NextResponse.json(
+        { error: "You are not authorized to send messages in this trade session" },
+        { status: 403 }
       );
     }
 
-    // If we have a conversationId but no receiverId, we need to find the receiver
-    let receiverId = data.receiverId;
-    if (!receiverId && conversationId) {
-      // Find the most recent message in this conversation to determine the other party
-      const existingMessages = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversationID, conversationId))
-        .limit(1);
-      
-      if (existingMessages.length === 0) {
-        return NextResponse.json(
-          { error: "Conversation not found" },
-          { status: 404 }
-        );
-      }
-
-      // Determine the receiver based on the existing message
-      const existingMessage = existingMessages[0];
-      receiverId = existingMessage.senderId === senderId 
-        ? existingMessage.receiverId 
-        : existingMessage.senderId;
-    }
-
-    // Now we can safely insert the new message
+    // Create the new message
     const newMessage = {
-      senderId,
-      receiverId: receiverId!,  // We've ensured this is defined by now
+      session_id: data.sessionId,
       content: data.content,
-      conversationID: conversationId!,  // We've ensured this is defined by now
+      fromVender: isVendor, // Set based on whether the sender is the vendor
       isRead: false,
     };
 
@@ -95,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: formattedMessage,
-      conversationId: insertedMessage.conversationID,
+      sessionId: insertedMessage.session_id,
     });
   } catch (error) {
     console.error("Error sending message:", error);

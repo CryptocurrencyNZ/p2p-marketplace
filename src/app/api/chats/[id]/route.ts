@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { users, messages, userProfile, starredChats } from "@/db/schema";
+import { users, messages, userProfile, starredChats, tradeSession } from "@/db/schema";
 import { and, desc, eq, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,75 +12,84 @@ export async function GET(
   if (!session || !session.user || !session.user.id)
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
 
-  const { id: conversationId } = await params;
+  const { id: sessionId } = await params;
   const userId = session.user.id;
 
-  // Get the 'since' parameter if it exists
-
   try {
-    const userMessages = await db
+    // First get the trade session to determine participants
+    const tradeSessionRecords = await db
       .select()
-      .from(messages)
-      .where(
-        and(
-          eq(messages.conversationID, conversationId),
-          or(eq(messages.senderId, userId), eq(messages.receiverId, userId)),
-        ),
-      )
-      .limit(1);
+      .from(tradeSession)
+      .where(eq(tradeSession.id, sessionId));
 
-    if (userMessages.length === 0) {
+    if (!tradeSessionRecords || tradeSessionRecords.length === 0) {
       return NextResponse.json(
-        { error: "Conversation not found" },
+        { error: "Trade session not found" },
         { status: 404 },
       );
     }
 
-    const message = userMessages[0];
-    const otherUserId =
-      message.senderId === userId ? message.receiverId : message.senderId;
+    const tradeSessionData = tradeSessionRecords[0];
+    
+    // Check if the user is part of this trade session
+    const isVendor = tradeSessionData.vendor_id === userId;
+    const isCustomer = tradeSessionData.customer_id === userId;
+    
+    if (!isVendor && !isCustomer) {
+      return NextResponse.json(
+        { error: "You are not authorized to view this conversation" },
+        { status: 403 },
+      );
+    }
+    
+    // Get the other participant's ID
+    const otherUserId = isVendor ? tradeSessionData.customer_id : tradeSessionData.vendor_id;
 
+    // Check if the conversation is starred
     const starredCheck = await db
       .select()
       .from(starredChats)
       .where(
         and(
           eq(starredChats.userId, userId),
-          eq(starredChats.conversationId, conversationId),
+          eq(starredChats.conversationId, sessionId),
         ),
       )
       .limit(1);
 
     const isStarred = starredCheck.length > 0;
 
+    // Get user profile and all messages
     const [otherUserProfile, otherUser, allMessages] = await Promise.all([
       db.select().from(userProfile).where(eq(userProfile.auth_id, otherUserId)),
       db.select().from(users).where(eq(users.id, otherUserId)),
       db
         .select()
         .from(messages)
-        .where(eq(messages.conversationID, conversationId))
+        .where(eq(messages.session_id, sessionId))
         .orderBy(desc(messages.createdAt))
         .limit(32),
     ]);
 
-    // maybe need if stuff here
-
     // Format messages for client
-    const formattedMessages = allMessages.map((msg) => ({
-      id: msg.id,
-      sender: msg.senderId === userId ? "me" : "other",
-      content: msg.content,
-      timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      status: msg.isRead ? "read" : "delivered",
-    }));
+    const formattedMessages = allMessages.map((msg) => {
+      const isFromMe = isVendor ? msg.fromVender : !msg.fromVender;
+      
+      return {
+        id: msg.id,
+        sender: isFromMe ? "me" : "other",
+        content: msg.content,
+        timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        status: msg.isRead ? "read" : "delivered",
+      };
+    });
 
     // Create response object
     const chatData = {
-      id: conversationId,
+      id: sessionId,
       user: {
         name: otherUserProfile[0]?.username || otherUser[0]?.name || "Unknown",
         address: otherUserId,

@@ -69,6 +69,7 @@ export const POST = async (request: Request) => {
     
     await db.insert(listings).values([newListing]);
 
+
     return NextResponse.json(newListing);
   } catch (error) {
     console.error("Error adding listing:", error);

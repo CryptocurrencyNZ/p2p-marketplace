@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1742633471399,
-      "tag": "0000_large_sleeper",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1742633601159,
-      "tag": "0001_kind_silk_fever",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1742633781687,
-      "tag": "0002_slippery_black_bolt",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1742641739641,
-      "tag": "0003_calm_sunfire",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1742641755613,
-      "tag": "0004_bright_argent",
+      "when": 1742644141476,
+      "tag": "0000_loose_justice",
       "breakpoints": true
     }
   ]

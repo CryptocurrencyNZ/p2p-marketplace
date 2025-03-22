@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import LoadingBar from "react-top-loading-bar";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export default function LoadingBarComponent({ 
-  color = "#00ff00" // Default to glowing green, but you can change the color
+  color = "#00ff00" // Default to glowing green
 }) {
   const [progress, setProgress] = useState(0);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Track route changes using App Router hooks
+  
+  // Only using pathname for route change detection
+  // Avoiding useSearchParams() which requires Suspense
   useEffect(() => {
     // When route changes, set progress to show loading
     setProgress(40);
@@ -22,7 +22,7 @@ export default function LoadingBarComponent({
     }, 100);
 
     return () => clearTimeout(timeout);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return (
     <LoadingBar

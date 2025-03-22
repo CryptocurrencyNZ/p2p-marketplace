@@ -56,9 +56,10 @@ export const userProfile = pgTable("userProfiles", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  auth_id: text("id").unique(),
-  username: text("string").notNull().unique(),
+    auth_id: text("auth_id").unique(),
+    username: text("string").notNull().unique(),    
   createdAt: timestamp("created_at").notNull().defaultNow(),
   bio: text("bio"),
   avatar: text("avatar"),
+  age: integer("age"),
 });

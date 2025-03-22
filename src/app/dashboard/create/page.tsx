@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 
 import { NZ_REGIONS } from '@/components/Map/filters';
-import { SUPPORTED_CURRENCIES } from '@/lib/crypto';
 
 const CreateListingPage = () => {
   // Define the currency type

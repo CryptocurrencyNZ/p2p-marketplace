@@ -4,7 +4,7 @@ import { users, messages, userProfile, starredChats, tradeSession } from "@/db/s
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET handler to fetch all starred chats for the current user
+// GET handler to fetch all chats for the current user
 export async function GET() {
   const session = await auth();
   if (!session || !session.user || !session.user.id)
@@ -13,28 +13,29 @@ export async function GET() {
   try {
     const userId = session.user.id;
 
+    // Get all trade sessions where the user is either vendor or customer
+    const tradeSessions = await db
+      .select()
+      .from(tradeSession)
+      .where(
+        or(
+          eq(tradeSession.vendor_id, userId),
+          eq(tradeSession.customer_id, userId)
+        )
+      );
+      
+    if (tradeSessions.length === 0) {
+      return NextResponse.json([]);
+    }
+
     // Get all starred conversations for this user
     const starredUserChats = await db
       .select()
       .from(starredChats)
       .where(eq(starredChats.userId, userId));
 
-    if (starredUserChats.length === 0) {
-      return NextResponse.json([]);
-    }
-
-    // Get the conversation IDs (which are trade session IDs)
-    const sessionIds = starredUserChats.map(chat => chat.conversationId);
-
-    // Get the trade sessions for these conversations
-    const tradeSessions = await db
-      .select()
-      .from(tradeSession)
-      .where(inArray(tradeSession.id, sessionIds));
-      
-    if (tradeSessions.length === 0) {
-      return NextResponse.json([]);
-    }
+    // Create a set of starred conversation IDs for quick lookup
+    const starredConversationIds = new Set(starredUserChats.map(chat => chat.conversationId));
 
     // Build the conversations list
     const conversations = [];
@@ -89,13 +90,13 @@ export async function GET() {
         lastMessage: latestMessage[0].content,
         timestamp: formatTimestamp(latestMessage[0].createdAt),
         unread: unreadCount,
-        starred: true, // All conversations here are starred by definition
+        starred: starredConversationIds.has(tradeData.id), // Check if this conversation is starred
       });
     }
 
     return NextResponse.json(conversations);
   } catch (error) {
-    console.error("Error fetching starred chats:", error);
+    console.error("Error fetching chats:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

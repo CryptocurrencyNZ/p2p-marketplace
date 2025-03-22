@@ -130,7 +130,7 @@ export const listings = pgTable("listings", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  user_auth_id: text("user_auth_id").unique(),
+  user_auth_id: text("user_auth_id"),
   createdAt: timestamp("created_at").defaultNow(),
   title: text("title").notNull(),
   location: text("location").notNull(),

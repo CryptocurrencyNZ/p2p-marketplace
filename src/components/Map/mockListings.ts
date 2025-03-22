@@ -63,9 +63,8 @@ const regionToCityMap: Record<string, string> = {
 
 // Generate number of completed trades
 const generateCompletedTrades = (rating: number): number => {
-  const baseCount = Math.floor(rating * 20);
   const randomFactor = Math.floor(Math.random() * 15);
-  return baseCount + randomFactor;
+  return randomFactor;
 };
 
 export const fetchMockListings = async (): Promise<TradeListing[]> => {
@@ -84,8 +83,9 @@ export const fetchMockListings = async (): Promise<TradeListing[]> => {
       // For each listing, get the user reputation from the backend
       // This assumes the backend sends reputation data or we fetch it separately
       // If userRep isn't available directly, you'll need a different approach
-      const userRep = item.userRep
-      const starRating = convertRepToStar(parseInt(userRep, 10));
+      //const userRep = item.userRep
+      //const starRating = convertRepToStar(parseInt(userRep, 10));
+      const starRating = Math.floor(Math.random() * 5);
       
       // Map backend location string to NZRegion enum value
       const region = item.location as keyof typeof NZRegion;

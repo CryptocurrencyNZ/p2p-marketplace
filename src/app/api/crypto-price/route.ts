@@ -83,7 +83,7 @@ async function getCryptoPrices(coinIds: string[]): Promise<CryptoPrice> {
     `https://api.coingecko.com/api/v3/simple/price?ids=${idsParam}&vs_currencies=usd`,
     { 
       headers: { 'Accept': 'application/json' },
-      next: { revalidate: 60 } // Cache for 60 seconds
+      next: { revalidate: 180 } // Cache for 60 seconds
     }
   );
   

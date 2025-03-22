@@ -41,7 +41,7 @@ interface EnhancedListing extends Omit<DbListing, 'price' | 'marginRate'> {
 const fetchCryptoPriceData = async (currency: string): Promise<PriceData> => {
   try {
     // Create a proper absolute URL for server-side API route calls
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+    const baseUrl = "https://p2p-marketplace-sigma.vercel.app";
     
     // Make sure the URL is absolute with proper protocol
     const apiUrl = new URL(`/api/crypto-price?currency=${currency.toLowerCase()}`, baseUrl);
@@ -115,34 +115,91 @@ export const GET = async () => {
 
     // Enhance listings with user reputation, star ratings, and NZ values
     const enhancedListings = await Promise.all(
-      allListings.map(async (listing) => { // Removed the type assertion since it was causing the error
-        // Check if userId exists before calling fetchUserElo
-        const userRep = listing.userId ? await fetchUserElo(listing.userId) : 0;
-        const starRating = convertRepToStar(userRep);
-        
-        // Calculate NZ value
-        const nzValue = await calculateNZValue(listing.price, listing.currency);
-        
-        // Convert margin rate from string to number (if available)
-        const marginRateNum = listing.marginRate ? parseFloat(listing.marginRate) : 0;
-        const calculatedMarginRate = isNaN(marginRateNum) ? 0 : marginRateNum;
-        
-// Convert price from string to integer
-      const priceAsFloat = parseFloat(listing.price);
-      const priceAsInteger = Math.round(priceAsFloat);
-
-        return {
-          ...listing,
-          price: priceAsInteger, 
-          userRep,
-          starRating,
-          nzValue,
-          calculatedMarginRate
-        } as EnhancedListing;
+      allListings.map(async (listing) => {
+        try {
+          // Check if userId exists before calling fetchUserElo
+          const userRep = listing.userId ? await fetchUserElo(listing.userId) : 0;
+          const starRating = convertRepToStar(userRep);
+          
+          // Parse price as float first
+          const priceAsFloat = parseFloat(listing.price);
+          
+          // Handle invalid price formats
+          if (isNaN(priceAsFloat)) {
+            console.error(`Invalid price format for listing ${listing.id}: "${listing.price}"`);
+            
+            // Return listing with default/fallback values for invalid price
+            return {
+              ...listing,
+              price: 0,
+              userRep,
+              starRating,
+              nzValue: null,
+              calculatedMarginRate: 0
+            } as EnhancedListing;
+          }
+          
+          // Calculate NZ value with additional error handling
+          let nzValue = null;
+          try {
+            nzValue = await calculateNZValue(listing.price, listing.currency);
+            
+            // Extra validation to ensure nzValue is not NaN
+            if (nzValue !== null && isNaN(nzValue)) {
+              console.error(`NaN nzValue calculated for listing ${listing.id}`, {
+                price: listing.price,
+                currency: listing.currency
+              });
+              nzValue = null;
+            }
+          } catch (calcError) {
+            console.error(`Error calculating NZ value for listing ${listing.id}:`, calcError);
+            nzValue = null;
+          }
+          
+          // Calculate margin rate with validation
+          let calculatedMarginRate = 0;
+          if (listing.marginRate) {
+            const marginRateNum = parseFloat(listing.marginRate);
+            calculatedMarginRate = isNaN(marginRateNum) ? 0 : marginRateNum;
+          }
+          
+          // Round price to integer after all calculations
+          const priceAsInteger = Math.round(priceAsFloat);
+          
+          return {
+            ...listing,
+            price: priceAsInteger,
+            userRep,
+            starRating,
+            nzValue, // This might be null if calculation failed
+            calculatedMarginRate
+          } as EnhancedListing;
+        } catch (error) {
+          console.error(`Error processing listing ${listing.id}:`, error);
+          
+          // Return listing with default values if processing fails
+          return {
+            ...listing,
+            price: parseFloat(listing.price) || 0,
+            userRep: 0,
+            starRating: 0,
+            nzValue: null,
+            calculatedMarginRate: 0
+          } as EnhancedListing;
+        }
       })
     );
 
-    console.log(enhancedListings);
+    // Log the first few listings for debugging
+    console.log("Sample of enhanced listings:", 
+      enhancedListings.slice(0, 2).map(l => ({
+        id: l.id,
+        price: l.price,
+        currency: l.currency,
+        nzValue: l.nzValue
+      }))
+    );
 
     return NextResponse.json(enhancedListings);
   } catch (error) {

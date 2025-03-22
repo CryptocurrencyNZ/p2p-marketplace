@@ -52,7 +52,7 @@ interface ConversionResponse {
 }
 
 // Define supported currencies
-export const SUPPORTED_CURRENCIES: Record<string, Currency> = {
+const SUPPORTED_CURRENCIES: Record<string, Currency> = {
   btc: { id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC', type: 'crypto' },
   eth: { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', type: 'crypto' },
   usdt: { id: 'tether', name: 'Tether', symbol: 'USDT', type: 'crypto' },

@@ -1,6 +1,6 @@
+// app/profile/page.tsx
 "use client";
 
-// app/profile/page.tsx
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -124,7 +124,7 @@ export default function ProfilePage() {
         // Also update the edited profile state
         setEditedProfile({
           username: profile.username || '',
-          age: userData.age, // Keep existing age
+          age: profile.age || 0, // Use profile.age directly instead of userData.age
           bio: profile.bio || '',
           avatar: profile.avatar || '',
         });
@@ -137,7 +137,7 @@ export default function ProfilePage() {
     };
 
     fetchUserProfile();
-  }, []);
+  }, []); // Empty dependency array is fine here since we only want to fetch on mount
 
   // Handle profile update
   const handleSaveProfile = async (): Promise<void> => {
@@ -254,8 +254,8 @@ export default function ProfilePage() {
               </div>
 
               <p className="mt-2 text-sm text-gray-300 max-w-md break-words overflow-hidden">
-  {userData.bio}
-</p>
+                {userData.bio}
+              </p>
 
               <div className="mt-4 grid grid-cols-3 gap-4">
                 <div className="bg-gray-800/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-700">

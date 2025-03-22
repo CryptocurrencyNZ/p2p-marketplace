@@ -11,40 +11,36 @@ interface PriceData {
   nzd: number;
 }
 
-// Define the type for a listing as it comes from the database
+// Update the DbListing interface to match what's actually returned from the database
 interface DbListing {
   id: string;
-  userId: string;
+  userId: string | null; // Changed to allow null, matching the database structure
   username: string;
   createdAt: Date | null;
   title: string;
   location: string;
-  price: string; // Price is a string from the DB
+  price: string;
   isBuy: boolean;
   currency: string;
   description: string;
-  marginRate: string | null; // MarginRate is a string from the DB
+  marginRate: string | null;
   onChainProof: boolean | null;
 }
 
 // Define the enhanced listing type
 interface EnhancedListing extends Omit<DbListing, 'price' | 'marginRate'> {
-  price: string; // Keep as string for display
-  marginRate: string | null; // Keep original
+  price: string;
+  marginRate: string | null;
   userRep: number;
   starRating: number;
   nzValue: number | null;
-  calculatedMarginRate: number; // New calculated margin rate as a number
+  calculatedMarginRate: number;
 }
 
-
-
 // Function to fetch cryptocurrency price data
-// Fixed function to fetch cryptocurrency price data from within another API route
 const fetchCryptoPriceData = async (currency: string): Promise<PriceData> => {
   try {
     // Create a proper absolute URL for server-side API route calls
-    // Use the environment variable for the host or default to localhost in development
     const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
     
     // Make sure the URL is absolute with proper protocol
@@ -119,9 +115,9 @@ export const GET = async () => {
 
     // Enhance listings with user reputation, star ratings, and NZ values
     const enhancedListings = await Promise.all(
-      allListings.map(async (listing: DbListing) => {
-        // Get user reputation data
-        const userRep = await fetchUserElo(listing.userId);
+      allListings.map(async (listing) => { // Removed the type assertion since it was causing the error
+        // Check if userId exists before calling fetchUserElo
+        const userRep = listing.userId ? await fetchUserElo(listing.userId) : 0;
         const starRating = convertRepToStar(userRep);
         
         // Calculate NZ value

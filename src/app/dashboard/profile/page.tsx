@@ -1,7 +1,7 @@
 "use client";
 
 // app/profile/page.tsx
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -124,50 +124,29 @@ export default function ProfilePage() {
   const [saveError, setSaveError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async (): Promise<void> => {
-      try {
-        const response = await fetch("/api/profile");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch profile data");
-        }
-
-        const profile: ProfileApiResponse = await response.json();
-
-        setUserData({
-          ...initialUserData,
-          username: profile.username || "Anonymous User",
-          bio: profile.bio || "No bio provided",
-          profileImage: profile.avatar || "/pfp-placeholder.jpg",
-          age: profile.age || 0,
-          reputation: profile.rep
-        });
-
-        console.log(profile.rep);
-
-        setEditedProfile({
-          username: profile.username || "",
-          age: userData.age,
-          bio: profile.bio || "",
-          avatar: profile.avatar || "",
-        });
-        
-        // Fetch user listings after profile is loaded
-        fetchUserListings();
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [userData.age]);
+  // Helper function to format date - wrapped in useCallback to prevent recreations
+  const formatDate = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  }, []); // No dependencies needed as this function doesn't rely on any state or props
   
   // Fetch user listings
-  const fetchUserListings = async (): Promise<void> => {
+  const fetchUserListings = useCallback(async (): Promise<void> => {
     try {
       const response = await fetch("/api/listings/profile");
       
@@ -196,28 +175,49 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Error fetching listings:", error);
     }
-  };
-  
-  // Helper function to format date
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  };
+  }, [formatDate]); // Include formatDate as a dependency, which is now stable
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async (): Promise<void> => {
+      try {
+        const response = await fetch("/api/profile");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile data");
+        }
+
+        const profile: ProfileApiResponse = await response.json();
+
+        setUserData({
+          ...initialUserData,
+          username: profile.username || "Anonymous User",
+          bio: profile.bio || "No bio provided",
+          profileImage: profile.avatar || "/pfp-placeholder.jpg",
+          age: profile.age || 0,
+          reputation: profile.rep
+        });
+
+        console.log(profile.rep);
+
+        setEditedProfile({
+          username: profile.username || "",
+          age: profile.age || 0,
+          bio: profile.bio || "",
+          avatar: profile.avatar || "",
+        });
+        
+        // Fetch user listings after profile is loaded
+        fetchUserListings();
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [fetchUserListings]); // Include fetchUserListings in the dependency array
 
   // Handle profile update
   const handleSaveProfile = async (): Promise<void> => {

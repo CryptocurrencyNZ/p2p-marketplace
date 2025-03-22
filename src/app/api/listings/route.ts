@@ -29,7 +29,7 @@ interface DbListing {
 
 // Define the enhanced listing type
 interface EnhancedListing extends Omit<DbListing, 'price' | 'marginRate'> {
-  price: string;
+  price: number;
   marginRate: string | null;
   userRep: number;
   starRating: number;
@@ -127,8 +127,13 @@ export const GET = async () => {
         const marginRateNum = listing.marginRate ? parseFloat(listing.marginRate) : 0;
         const calculatedMarginRate = isNaN(marginRateNum) ? 0 : marginRateNum;
         
+// Convert price from string to integer
+      const priceAsFloat = parseFloat(listing.price);
+      const priceAsInteger = Math.round(priceAsFloat);
+
         return {
           ...listing,
+          price: priceAsInteger, 
           userRep,
           starRating,
           nzValue,
@@ -136,6 +141,8 @@ export const GET = async () => {
         } as EnhancedListing;
       })
     );
+
+    console.log(enhancedListings);
 
     return NextResponse.json(enhancedListings);
   } catch (error) {

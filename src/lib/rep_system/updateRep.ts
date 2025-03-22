@@ -4,7 +4,7 @@
  * @param raterUserId user Id of the user that is 
  * @param tradeScore The score that the user was given in the feedback (either 1, 0 or -1)
  */
-export async function updateUserReputation(recievingUserId: number, raterUserId: number, tradeScore: number, numTrades: number) {
+export async function updateUserReputation(recievingUserId: string, raterUserId: string, tradeScore: number, numTrades: number) {
     const recieverELO = await fetchUserElo(recievingUserId);
     const raterELO = await fetchUserElo(raterUserId);
 
@@ -13,7 +13,7 @@ export async function updateUserReputation(recievingUserId: number, raterUserId:
     await updateUserElo(recievingUserId, newRecieverELO);
 }
 
-async function fetchUserElo(userId: number): Promise<number> {
+async function fetchUserElo(userId: string): Promise<number> {
     const resp = await fetch(`https://p2p-elo-worker.hunekejustus.workers.dev/get?id=${userId}`, { method: "GET" });
 
     if (!resp.ok) {
@@ -24,7 +24,7 @@ async function fetchUserElo(userId: number): Promise<number> {
     return parseInt(elo);
 }
 
-export async function updateUserElo(userId: number, newElo: number) {
+export async function updateUserElo(userId: string, newElo: number) {
     const resp = await fetch(`https://p2p-elo-worker.hunekejustus.workers.dev/update?id=${userId}&elo=${newElo}`, { method: "POST" });
 
     if (!resp.ok) {

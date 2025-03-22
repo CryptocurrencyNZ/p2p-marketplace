@@ -508,7 +508,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Current Listings</h2>
               <Link
-                href="/create"
+                href="create"
                 className="text-green-400 text-sm flex items-center hover:text-green-300"
               >
                 <span>Create New</span>

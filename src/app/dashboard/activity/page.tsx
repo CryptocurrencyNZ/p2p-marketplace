@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -23,6 +23,13 @@ const ActivityPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [mounted, setMounted] = useState(false);
+
+  // Add useEffect to handle client-side mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   type TransactionType = "buy" | "sell" | "send" | "receive" | "swap";
   type TransactionStatus = "completed" | "pending" | "failed";
 
@@ -218,6 +225,8 @@ const ActivityPage = () => {
 
   // Function to get formatted date
   const formatDate = (date: Date): string => {
+    if (!mounted) return "";
+    
     const now = new Date();
     const diffDays = Math.floor(
       (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
@@ -300,6 +309,9 @@ const ActivityPage = () => {
   const groupedTransactions = filteredTransactions.reduce<
     Record<string, Transaction[]>
   >((groups, tx) => {
+    // Don't group if not mounted yet
+    if (!mounted) return {};
+    
     const date = tx.timestamp.toLocaleDateString([], {
       day: "numeric",
       month: "short",
@@ -313,6 +325,28 @@ const ActivityPage = () => {
     groups[date].push(tx);
     return groups;
   }, {});
+
+  // Return early with a loading state if not mounted yet
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+        <header className="px-4 py-6 border-b border-gray-800">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-500 to-green-300 text-transparent bg-clip-text">
+                Activity
+              </h1>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex justify-center py-8">
+            <p className="text-gray-400">Loading transactions...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">

@@ -7,10 +7,6 @@ const weight = (rA: number): number => {
     return rA / (rA + 5000);
 }
 
-<<<<<<< HEAD
-export function repUpdate(rReciever: number, rRater: number, score: number, numTrades: number): number {
-    if (score === 0) {
-=======
 function repUpdate(rReciever: number, rRater: number, score: number, numTrades: number): number {
     if (rReciever === -1) {
         if (score === 1){
@@ -25,17 +21,14 @@ function repUpdate(rReciever: number, rRater: number, score: number, numTrades: 
             rReciever = 980
             return rReciever;
         }
->>>>>>> defd76bc3a72f9482084b6dc08230f29970d8413
+    }
+
+    if (score === 0) {
         return rReciever + 1;
     }
+    
     let newRating = rReciever + (150 * (1 / (0.6 * Math.sqrt(numTrades + 1)))) * weight(rRater) * (score - expected(rRater, rReciever));
     newRating = Math.min(newRating, 2000);
     newRating = Math.round(newRating);
     return newRating;
-<<<<<<< HEAD
 }
-=======
-}
-
-console.log(repUpdate(1000, 0, 0, 0));
->>>>>>> defd76bc3a72f9482084b6dc08230f29970d8413

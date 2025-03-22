@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { users, messages, userProfile, starredChats } from "@/db/schema";
+import { users, messages, userProfile, starredChats, tradeSession } from "@/db/schema";
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -23,55 +23,62 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    // Get the conversation IDs
-    const conversationIds = starredUserChats.map(chat => chat.conversationId);
+    // Get the conversation IDs (which are trade session IDs)
+    const sessionIds = starredUserChats.map(chat => chat.conversationId);
 
-    // Get the most recent message from each conversation
-    const recentMessages = await db
-      .select({
-        id: messages.conversationID,
-        senderId: messages.senderId,
-        receiverId: messages.receiverId,
-        content: messages.content,
-        createdAt: messages.createdAt,
-        isRead: messages.isRead,
-      })
-      .from(messages)
-      .where(
-        and(
-          inArray(messages.conversationID, conversationIds),
-          or(eq(messages.senderId, userId), eq(messages.receiverId, userId))
-        )
-      )
-      .orderBy(desc(messages.createdAt));
+    // Get the trade sessions for these conversations
+    const tradeSessions = await db
+      .select()
+      .from(tradeSession)
+      .where(inArray(tradeSession.id, sessionIds));
+      
+    if (tradeSessions.length === 0) {
+      return NextResponse.json([]);
+    }
 
-    // Group messages by conversation and only keep the most recent
-    const conversationsMap = new Map();
+    // Build the conversations list
+    const conversations = [];
     
-    for (const message of recentMessages) {
-      const conversationId = message.id;
-      
-      // Skip messages without a conversation ID
-      if (!conversationId) continue;
-      
-      // If we already have this conversation, skip (we're only interested in the most recent message)
-      if (conversationsMap.has(conversationId)) continue;
-      
-      const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
-
-      // Get other user profile
-      const otherUserProfile = await db
+    for (const tradeData of tradeSessions) {
+      // Get the latest message for this trade session
+      const latestMessage = await db
         .select()
-        .from(userProfile)
-        .where(eq(userProfile.auth_id, otherUserId));
+        .from(messages)
+        .where(eq(messages.session_id, tradeData.id))
+        .orderBy(desc(messages.createdAt))
+        .limit(1);
+        
+      if (latestMessage.length === 0) continue;
       
-      const otherUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, otherUserId));
-
-      conversationsMap.set(conversationId, {
-        id: conversationId,
+      // Determine the other user in the conversation
+      const otherUserId = tradeData.vendor_id === userId 
+        ? tradeData.customer_id 
+        : tradeData.vendor_id;
+      
+      // Get profile info for the other user
+      const [otherUserProfile, otherUser] = await Promise.all([
+        db.select().from(userProfile).where(eq(userProfile.auth_id, otherUserId)),
+        db.select().from(users).where(eq(users.id, otherUserId))
+      ]);
+      
+      // Count unread messages
+      const unreadMessages = await db
+        .select({ count: messages })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.session_id, tradeData.id),
+            eq(messages.isRead, false),
+            // Messages from the other user that current user hasn't read
+            eq(messages.fromVender, tradeData.vendor_id === otherUserId)
+          )
+        );
+        
+      const unreadCount = unreadMessages.length;
+      
+      // Build conversation object
+      conversations.push({
+        id: tradeData.id,
         user: {
           id: otherUserId,
           name: otherUserProfile[0]?.username || otherUser[0]?.name || "Unknown",
@@ -79,14 +86,14 @@ export async function GET() {
           avatar: otherUserProfile[0]?.avatar || "/api/placeholder/40/40",
           status: "offline", // In a real app, this would come from a user status table
         },
-        lastMessage: message.content,
-        timestamp: formatTimestamp(message.createdAt),
-        unread: message.receiverId === userId && !message.isRead ? 1 : 0,
+        lastMessage: latestMessage[0].content,
+        timestamp: formatTimestamp(latestMessage[0].createdAt),
+        unread: unreadCount,
         starred: true, // All conversations here are starred by definition
       });
     }
 
-    return NextResponse.json(Array.from(conversationsMap.values()));
+    return NextResponse.json(conversations);
   } catch (error) {
     console.error("Error fetching starred chats:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { users, messages, userProfile, starredChats } from "@/db/schema";
+import { users, messages, userProfile, starredChats, tradeSession } from "@/db/schema";
 import { and, desc, eq, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -23,8 +23,8 @@ export async function GET(
       .from(messages)
       .where(
         and(
-          eq(messages.conversationID, conversationId),
-          or(eq(messages.senderId, userId), eq(messages.receiverId, userId)),
+          eq(messages.session_id, conversationId),
+          or(eq(messages.fromVender, true), eq(messages.fromVender, false)),
         ),
       )
       .limit(1);
@@ -37,8 +37,23 @@ export async function GET(
     }
 
     const message = userMessages[0];
-    const otherUserId =
-      message.senderId === userId ? message.receiverId : message.senderId;
+    // In this schema, we don't have sender/receiver IDs like that
+    // Instead use the trade session to identify parties
+    const tradeInfo = await db
+      .select()
+      .from(tradeSession)
+      .where(eq(tradeSession.id, message.session_id))
+      .limit(1);
+      
+    if (tradeInfo.length === 0) {
+      return NextResponse.json(
+        { error: "Trade session not found" },
+        { status: 404 },
+      );
+    }
+    
+    const session = tradeInfo[0];
+    const otherUserId = session.vendor_id === userId ? session.customer_id : session.vendor_id;
 
     const starredCheck = await db
       .select()
@@ -59,7 +74,7 @@ export async function GET(
       db
         .select()
         .from(messages)
-        .where(eq(messages.conversationID, conversationId))
+        .where(eq(messages.session_id, conversationId))
         .orderBy(desc(messages.createdAt))
         .limit(32),
     ]);
@@ -67,16 +82,23 @@ export async function GET(
     // maybe need if stuff here
 
     // Format messages for client
-    const formattedMessages = allMessages.map((msg) => ({
-      id: msg.id,
-      sender: msg.senderId === userId ? "me" : "other",
-      content: msg.content,
-      timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      status: msg.isRead ? "read" : "delivered",
-    }));
+    const formattedMessages = allMessages.map((msg) => {
+      // If the message is from vendor, check if current user is vendor
+      const isFromCurrentUser = 
+        (msg.fromVender && session.vendor_id === userId) || 
+        (!msg.fromVender && session.customer_id === userId);
+        
+      return {
+        id: msg.id,
+        sender: isFromCurrentUser ? "me" : "other",
+        content: msg.content,
+        timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        status: msg.isRead ? "read" : "delivered",
+      };
+    });
 
     // Create response object
     const chatData = {

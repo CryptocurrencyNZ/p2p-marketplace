@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { TradeListing } from "./types";
 
 interface P2PCryptoTradeMapProps {
@@ -35,93 +35,8 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
   // Debug flag - set to true to enable console logs
   const debug = true;
 
-  // Initialize the map
-  useEffect(() => {
-    const initializeMap = async () => {
-      // Check if mapRef exists and map is not already initialized
-      if (
-        mapRef.current &&
-        !mapRef.current.querySelector(".mapboxgl-canvas-container")
-      ) {
-        if (debug) console.log("Initializing map...");
-        
-        // Load Mapbox GL script dynamically
-        if (!window.mapboxgl) {
-          if (debug) console.log("Loading mapboxgl scripts...");
-          
-          // Load CSS
-          const linkEl = document.createElement("link");
-          linkEl.href =
-            "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css";
-          linkEl.rel = "stylesheet";
-          document.head.appendChild(linkEl);
-
-          // Load JS
-          const scriptEl = document.createElement("script");
-          scriptEl.src =
-            "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js";
-          scriptEl.async = true;
-
-          // Wait for script to load
-          await new Promise((resolve) => {
-            scriptEl.onload = resolve;
-            document.head.appendChild(scriptEl);
-          });
-          
-          if (debug) console.log("mapboxgl scripts loaded successfully");
-        }
-
-        // Initialize the map
-        try {
-          const mapboxgl = window.mapboxgl;
-          mapboxgl.accessToken =
-            "pk.eyJ1IjoiamF5ZGVuLWNueiIsImEiOiJjbThpZTljaW8wNmh0MmtvZTh4czRycWp1In0.P3UGPsCBIDnPIADynqDMrw";
-
-          // New Zealand coordinates
-          const nzCenter = [172.8344, -41.5]; // [longitude, latitude]
-          const initialZoom = 5;
-
-          const map = new mapboxgl.Map({
-            container: mapRef.current,
-            style: "mapbox://styles/mapbox/outdoors-v12",
-            center: nzCenter,
-            zoom: initialZoom,
-          });
-
-          // Store map object for later use
-          setMapObject(map);
-
-          // Add navigation controls
-          map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-          // Wait for map to load before fetching listings
-          map.on("load", () => {
-            if (debug) console.log("Map loaded successfully");
-            setMapLoaded(true);
-            
-            // Add markers for each listing
-            if (listings.length > 0) {
-              if (debug) console.log("Adding markers on initial load:", listings.length);
-              addMarkersToMap(map, listings);
-            }
-          });
-          
-        } catch (error) {
-          console.error("Error initializing map:", error);
-        }
-      } else if (mapObject && mapLoaded && listings.length > 0) {
-        // If map is already initialized but we need to refresh markers
-        if (debug) console.log("Map already initialized, adding markers:", listings.length);
-        addMarkersToMap(mapObject, listings);
-      }
-    };
-
-    // Initialize map when component mounts
-    initializeMap();
-  }, [listings, mapObject, setMapObject, mapLoaded]);
-
   // Function to add markers to the map
-  const addMarkersToMap = (map: any, tradeListings: TradeListing[]) => {
+  const addMarkersToMap = useCallback((map: any, tradeListings: TradeListing[]) => {
     if (!map || !tradeListings.length) {
       if (debug) console.log("Map or listings not available");
       return;
@@ -297,7 +212,92 @@ document.head.appendChild(styleTag);
     markersRef.current = newMarkers;
     
     if (debug) console.log(`Added ${newMarkers.length} markers to map`);
-  };
+  }, [setSelectedListing, setShowPanel, setShowFilterMenu, isMobile, markersRef, debug]);
+
+  // Initialize the map
+  useEffect(() => {
+    const initializeMap = async () => {
+      // Check if mapRef exists and map is not already initialized
+      if (
+        mapRef.current &&
+        !mapRef.current.querySelector(".mapboxgl-canvas-container")
+      ) {
+        if (debug) console.log("Initializing map...");
+        
+        // Load Mapbox GL script dynamically
+        if (!window.mapboxgl) {
+          if (debug) console.log("Loading mapboxgl scripts...");
+          
+          // Load CSS
+          const linkEl = document.createElement("link");
+          linkEl.href =
+            "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css";
+          linkEl.rel = "stylesheet";
+          document.head.appendChild(linkEl);
+
+          // Load JS
+          const scriptEl = document.createElement("script");
+          scriptEl.src =
+            "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js";
+          scriptEl.async = true;
+
+          // Wait for script to load
+          await new Promise((resolve) => {
+            scriptEl.onload = resolve;
+            document.head.appendChild(scriptEl);
+          });
+          
+          if (debug) console.log("mapboxgl scripts loaded successfully");
+        }
+
+        // Initialize the map
+        try {
+          const mapboxgl = window.mapboxgl;
+          mapboxgl.accessToken =
+            "pk.eyJ1IjoiamF5ZGVuLWNueiIsImEiOiJjbThpZTljaW8wNmh0MmtvZTh4czRycWp1In0.P3UGPsCBIDnPIADynqDMrw";
+
+          // New Zealand coordinates
+          const nzCenter = [172.8344, -41.5]; // [longitude, latitude]
+          const initialZoom = 5;
+
+          const map = new mapboxgl.Map({
+            container: mapRef.current,
+            style: "mapbox://styles/mapbox/outdoors-v12",
+            center: nzCenter,
+            zoom: initialZoom,
+          });
+
+          // Store map object for later use
+          setMapObject(map);
+
+          // Add navigation controls
+          map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+          // Wait for map to load before fetching listings
+          map.on("load", () => {
+            if (debug) console.log("Map loaded successfully");
+            setMapLoaded(true);
+            
+            // Add markers for each listing
+            if (listings.length > 0) {
+              if (debug) console.log("Adding markers on initial load:", listings.length);
+              addMarkersToMap(map, listings);
+            }
+          });
+          
+        } catch (error) {
+          console.error("Error initializing map:", error);
+        }
+      } else if (mapObject && mapLoaded && listings.length > 0) {
+        // If map is already initialized but we need to refresh markers
+        if (debug) console.log("Map already initialized, adding markers:", listings.length);
+        addMarkersToMap(mapObject, listings);
+      }
+    };
+
+    // Initialize map when component mounts
+    initializeMap();
+  }, [listings, mapObject, setMapObject, mapLoaded, addMarkersToMap, debug]);
 
   return (
     <div ref={mapRef} className="w-full h-full">

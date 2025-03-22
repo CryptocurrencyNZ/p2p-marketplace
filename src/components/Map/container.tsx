@@ -23,16 +23,17 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showPanel, setShowPanel] = useState<boolean>(false);
   const [showFilterMenu, setShowFilterMenu] = useState<boolean>(true);
-  
+
   // Filter state
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [cryptoFilter, setCryptoFilter] = useState<string>("all");
-  
+
   // Extended filter states
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [priceTier, setPriceTier] = useState<PriceTier>("all");
   const [reputationTier, setReputationTier] = useState<ReputationTier>("all");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] =
+    useState<boolean>(false);
 
   // Check if we're on mobile
   useEffect(() => {
@@ -80,7 +81,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
       }, 200);
     }
   }, [viewMode, mapObject, showPanel]);
-  
+
   // Add an additional resize effect for when the panel is toggled
   useEffect(() => {
     if (mapObject) {
@@ -110,7 +111,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
       setShowFilterMenu(false);
     }
   };
-  
+
   // Effect to manage filter menu visibility
   useEffect(() => {
     if (isMobile) {
@@ -142,7 +143,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
       minute: "2-digit",
     });
   };
-  
+
   // Helper function to determine price tier
   const getPriceTierForListing = (listing: TradeListing): PriceTier => {
     // These thresholds should be adjusted based on your data
@@ -152,7 +153,10 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
   };
 
   // Helper function to determine if rating meets reputation tier
-  const meetsReputationTier = (rating: number, tier: ReputationTier): boolean => {
+  const meetsReputationTier = (
+    rating: number,
+    tier: ReputationTier,
+  ): boolean => {
     if (tier === "all") return true;
     if (tier === "4+" && rating >= 4) return true;
     if (tier === "4.5+" && rating >= 4.5) return true;
@@ -162,33 +166,39 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
 
   // Apply filters to listings
   const applyFilters = () => {
-    return listings.filter(listing => {
+    return listings.filter((listing) => {
       // Filter by trade type
-      if (activeFilter !== 'all') {
-        const filterType = activeFilter === 'buying' ? 'buy' : 'sell';
+      if (activeFilter !== "all") {
+        const filterType = activeFilter === "buying" ? "buy" : "sell";
         if (listing.tradeType !== filterType) return false;
       }
-      
+
       // Filter by crypto type
-      if (cryptoFilter !== 'all' && listing.cryptoType !== cryptoFilter) {
+      if (cryptoFilter !== "all" && listing.cryptoType !== cryptoFilter) {
         return false;
       }
-      
+
       // Filter by region
-      if (regionFilter !== 'all' && listing.location.region !== regionFilter) {
+      if (regionFilter !== "all" && listing.location.region !== regionFilter) {
         return false;
       }
-      
+
       // Filter by price tier
-      if (priceTier !== 'all' && getPriceTierForListing(listing) !== priceTier) {
+      if (
+        priceTier !== "all" &&
+        getPriceTierForListing(listing) !== priceTier
+      ) {
         return false;
       }
-      
+
       // Filter by reputation tier
-      if (reputationTier !== 'all' && !meetsReputationTier(listing.trader.rating, reputationTier)) {
+      if (
+        reputationTier !== "all" &&
+        !meetsReputationTier(listing.trader.rating, reputationTier)
+      ) {
         return false;
       }
-      
+
       return true;
     });
   };
@@ -212,21 +222,21 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
         <div className="fixed top-4 left-0 right-0 z-10 px-4 mx-auto">
           <div className="bg-white shadow-lg rounded-lg p-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1 w-full">
-              <button 
-                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'all' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-                onClick={() => setActiveFilter('all')}
+              <button
+                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "all" ? "bg-gradient-to-r from-green-500 to-green-600 text-white" : "bg-gray-200 text-gray-800"}`}
+                onClick={() => setActiveFilter("all")}
               >
                 All
               </button>
-              <button 
-                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'buying' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-                onClick={() => setActiveFilter('buying')}
+              <button
+                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "buying" ? "bg-green-600 text-white" : "bg-gray-200 text-gray-800"}`}
+                onClick={() => setActiveFilter("buying")}
               >
                 Buying
               </button>
-              <button 
-                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'selling' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-                onClick={() => setActiveFilter('selling')}
+              <button
+                className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "selling" ? "bg-red-600 text-white" : "bg-gray-200 text-gray-800"}`}
+                onClick={() => setActiveFilter("selling")}
               >
                 Selling
               </button>
@@ -269,25 +279,27 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
         {!isMobile ? (
           <div className="md:w-[26rem] lg:w-[30rem] xl:w-[32rem] h-full shadow-xl bg-gray-800 overflow-y-auto overflow-x-hidden hidden md:block pr-3">
             <div className="p-4 border-b border-gray-700">
-              <h2 className="text-xl font-bold text-white">Listings ({applyFilters().length})</h2>
-              
+              <h2 className="text-xl font-bold text-white">
+                Listings ({applyFilters().length})
+              </h2>
+
               {/* Desktop Filter Menu */}
               <div className="mt-4 flex flex-wrap gap-2">
-                <button 
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'all' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gray-700 text-gray-200'}`}
-                  onClick={() => setActiveFilter('all')}
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "all" ? "bg-gradient-to-r from-green-500 to-green-600 text-white" : "bg-gray-700 text-gray-200"}`}
+                  onClick={() => setActiveFilter("all")}
                 >
                   All
                 </button>
-                <button 
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'buying' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200'}`}
-                  onClick={() => setActiveFilter('buying')}
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "buying" ? "bg-green-600 text-white" : "bg-gray-700 text-gray-200"}`}
+                  onClick={() => setActiveFilter("buying")}
                 >
                   Buying
                 </button>
-                <button 
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'selling' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-200'}`}
-                  onClick={() => setActiveFilter('selling')}
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "selling" ? "bg-red-600 text-white" : "bg-gray-700 text-gray-200"}`}
+                  onClick={() => setActiveFilter("selling")}
                 >
                   Selling
                 </button>
@@ -303,23 +315,27 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                   <option value="SOL">Solana</option>
                   <option value="BNB">BNB</option>
                 </select>
-                
+
                 <button
                   className="px-3 py-1 rounded-full text-sm font-medium bg-gray-700 text-gray-200 flex items-center"
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 >
-                  {showAdvancedFilters ? "Hide Filters" : "More Filters"} 
-                  <span className="ml-1">{showAdvancedFilters ? "▲" : "▼"}</span>
+                  {showAdvancedFilters ? "Hide Filters" : "More Filters"}
+                  <span className="ml-1">
+                    {showAdvancedFilters ? "▲" : "▼"}
+                  </span>
                 </button>
               </div>
-              
+
               {/* Advanced Filters */}
               {showAdvancedFilters && (
                 <div className="mt-3 p-3 bg-gray-700 rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {/* Region Filter */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Region</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Region
+                      </label>
                       <select
                         className="w-full px-3 py-1 rounded text-sm bg-gray-800 text-white border border-gray-600"
                         value={regionFilter}
@@ -327,18 +343,24 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                       >
                         <option value="all">All Regions</option>
                         {Object.values(NZRegion).map((region) => (
-                          <option key={region} value={region}>{region}</option>
+                          <option key={region} value={region}>
+                            {region}
+                          </option>
                         ))}
                       </select>
                     </div>
-                    
+
                     {/* Price Tier Filter */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Price Range</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Price Range
+                      </label>
                       <select
                         className="w-full px-3 py-1 rounded text-sm bg-gray-800 text-white border border-gray-600"
                         value={priceTier}
-                        onChange={(e) => setPriceTier(e.target.value as PriceTier)}
+                        onChange={(e) =>
+                          setPriceTier(e.target.value as PriceTier)
+                        }
                       >
                         <option value="all">Any Price</option>
                         <option value="low">Low ($0+)</option>
@@ -346,14 +368,18 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                         <option value="high">High ($10,000)</option>
                       </select>
                     </div>
-                    
+
                     {/* Reputation Filter */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Trader Rating</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Trader Rating
+                      </label>
                       <select
                         className="w-full px-3 py-1 rounded text-sm bg-gray-800 text-white border border-gray-600"
                         value={reputationTier}
-                        onChange={(e) => setReputationTier(e.target.value as ReputationTier)}
+                        onChange={(e) =>
+                          setReputationTier(e.target.value as ReputationTier)
+                        }
                       >
                         <option value="all">Any Rating</option>
                         <option value="4+">4+ Stars</option>
@@ -362,14 +388,14 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 flex justify-end">
                     <button
                       className="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded text-sm"
                       onClick={() => {
-                        setRegionFilter('all');
-                        setPriceTier('all');
-                        setReputationTier('all');
+                        setRegionFilter("all");
+                        setPriceTier("all");
+                        setReputationTier("all");
                       }}
                     >
                       Clear Filters
@@ -378,7 +404,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                 </div>
               )}
             </div>
-            
+
             <div className="w-full px-5">
               <ListingsPanel
                 isLoading={isLoading}
@@ -391,41 +417,45 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
             </div>
           </div>
         ) : (
-          <div 
+          <div
             className={`fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-lg shadow-2xl transition-transform duration-300 ease-in-out z-20 ${
               showPanel ? "translate-y-0" : "translate-y-full"
             }`}
-            style={{ maxHeight: "60vh", overflowY: "auto", overflowX: "hidden" }}
+            style={{
+              maxHeight: "60vh",
+              overflowY: "auto",
+              overflowX: "hidden",
+            }}
           >
             <div className="flex justify-between items-center p-2 border-b border-gray-700">
               <div className="w-8"></div>
               <div className="w-12 h-1 bg-gray-500 rounded-full"></div>
-              <button 
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white" 
+              <button
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white"
                 onClick={() => setShowPanel(false)}
               >
                 <span className="text-xl font-bold">&times;</span>
               </button>
             </div>
-            
+
             {/* Mobile Advanced Filters */}
             <div className="p-3 border-b border-gray-700">
               <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1 w-full">
-                <button 
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'all' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' : 'bg-gray-700 text-gray-200'}`}
-                  onClick={() => setActiveFilter('all')}
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "all" ? "bg-gradient-to-r from-green-500 to-green-600 text-white" : "bg-gray-700 text-gray-200"}`}
+                  onClick={() => setActiveFilter("all")}
                 >
                   All
                 </button>
-                <button 
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'buying' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200'}`}
-                  onClick={() => setActiveFilter('buying')}
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "buying" ? "bg-green-600 text-white" : "bg-gray-700 text-gray-200"}`}
+                  onClick={() => setActiveFilter("buying")}
                 >
                   Buying
                 </button>
-                <button 
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === 'selling' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-200'}`}
-                  onClick={() => setActiveFilter('selling')}
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${activeFilter === "selling" ? "bg-red-600 text-white" : "bg-gray-700 text-gray-200"}`}
+                  onClick={() => setActiveFilter("selling")}
                 >
                   Selling
                 </button>
@@ -441,23 +471,27 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                   <option value="SOL">Solana</option>
                   <option value="BNB">BNB</option>
                 </select>
-                
+
                 <button
                   className="px-3 py-1 rounded-full text-sm font-medium bg-gray-700 text-gray-200 whitespace-nowrap"
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 >
-                  {showAdvancedFilters ? "Less" : "More"} 
-                  <span className="ml-1">{showAdvancedFilters ? "▲" : "▼"}</span>
+                  {showAdvancedFilters ? "Less" : "More"}
+                  <span className="ml-1">
+                    {showAdvancedFilters ? "▲" : "▼"}
+                  </span>
                 </button>
               </div>
-              
+
               {/* Mobile Advanced Filters */}
               {showAdvancedFilters && (
                 <div className="mt-3 pt-2 border-t border-gray-600">
                   <div className="space-y-3">
                     {/* Region Filter */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Region</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Region
+                      </label>
                       <select
                         className="w-full px-3 py-2 rounded text-sm bg-gray-800 text-white border border-gray-600"
                         value={regionFilter}
@@ -465,18 +499,24 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                       >
                         <option value="all">All Regions</option>
                         {Object.values(NZRegion).map((region) => (
-                          <option key={region} value={region}>{region}</option>
+                          <option key={region} value={region}>
+                            {region}
+                          </option>
                         ))}
                       </select>
                     </div>
-                    
+
                     {/* Price Tier Filter */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Price Range</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Price Range
+                      </label>
                       <select
                         className="w-full px-3 py-2 rounded text-sm bg-gray-800 text-white border border-gray-600"
                         value={priceTier}
-                        onChange={(e) => setPriceTier(e.target.value as PriceTier)}
+                        onChange={(e) =>
+                          setPriceTier(e.target.value as PriceTier)
+                        }
                       >
                         <option value="all">Any Price</option>
                         <option value="low">Low ($0+)</option>
@@ -484,14 +524,18 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                         <option value="high">High ($10,000)</option>
                       </select>
                     </div>
-                    
+
                     {/* Reputation Filter */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Trader Rating</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Trader Rating
+                      </label>
                       <select
                         className="w-full px-3 py-2 rounded text-sm bg-gray-800 text-white border border-gray-600"
                         value={reputationTier}
-                        onChange={(e) => setReputationTier(e.target.value as ReputationTier)}
+                        onChange={(e) =>
+                          setReputationTier(e.target.value as ReputationTier)
+                        }
                       >
                         <option value="all">Any Rating</option>
                         <option value="4+">4+ Stars</option>
@@ -499,14 +543,14 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                         <option value="5">5 Stars Only</option>
                       </select>
                     </div>
-                    
+
                     <div className="pt-1">
                       <button
                         className="w-full px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded text-sm"
                         onClick={() => {
-                          setRegionFilter('all');
-                          setPriceTier('all');
-                          setReputationTier('all');
+                          setRegionFilter("all");
+                          setPriceTier("all");
+                          setReputationTier("all");
                         }}
                       >
                         Clear All Filters
@@ -516,7 +560,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                 </div>
               )}
             </div>
-            
+
             <div className="w-full px-3">
               <ListingsPanel
                 isLoading={isLoading}
@@ -533,9 +577,11 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
 
       {/* Selected Listing Detail Popup - Only on Mobile */}
       {selectedListing && isMobile && (
-        <div className={`fixed inset-x-0 bottom-0 bg-gray-800 rounded-t-lg shadow-2xl z-50 ${
-          isMobile && showPanel ? "bottom-[60vh]" : ""
-        }`}>
+        <div
+          className={`fixed inset-x-0 bottom-0 bg-gray-800 rounded-t-lg shadow-2xl z-50 ${
+            isMobile && showPanel ? "bottom-[60vh]" : ""
+          }`}
+        >
           <div className="p-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-lg font-bold text-white">
@@ -559,11 +605,12 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
               >
                 {selectedListing.cryptoType}
               </div>
-              
+
               <div
                 className="inline-block px-2 py-1 rounded-full text-sm"
                 style={{
-                  backgroundColor: selectedListing.tradeType === "buy" ? "#22c55e" : "#ef4444",
+                  backgroundColor:
+                    selectedListing.tradeType === "buy" ? "#22c55e" : "#ef4444",
                   color: "white",
                 }}
               >
@@ -594,16 +641,16 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
               </div>
             </div>
 
-            <button 
+            <button
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg"
               onClick={async () => {
                 try {
-                  const response = await fetch('/api/trade-sessions', {
-                    method: 'POST',
+                  const response = await fetch("/api/trade-sessions", {
+                    method: "POST",
                     headers: {
-                      'Content-Type': 'application/json',
+                      "Content-Type": "application/json",
                     },
-                    credentials: 'include',
+                    credentials: "include",
                     body: JSON.stringify({
                       listingId: selectedListing.id,
                       vendorId: selectedListing.trader.id,
@@ -612,15 +659,15 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                   });
 
                   if (!response.ok) {
-                    throw new Error('Failed to create trade session');
+                    throw new Error("Failed to create trade session");
                   }
 
                   const data = await response.json();
-                  
+
                   // Navigate to the chat page
                   window.location.href = `/dashboard/messages?chat=${data.id}`;
                 } catch (error) {
-                  console.error('Error creating trade session:', error);
+                  console.error("Error creating trade session:", error);
                   // You might want to show an error message to the user here
                 }
               }}
@@ -630,7 +677,7 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
           </div>
         </div>
       )}
-      
+
       {/* Selected Listing Detail Panel - Desktop version */}
       {selectedListing && !isMobile && (
         <div className="fixed top-4 left-4 bg-gray-800 rounded-lg shadow-2xl z-50 w-80">
@@ -657,11 +704,12 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
               >
                 {selectedListing.cryptoType}
               </div>
-              
+
               <div
                 className="inline-block px-2 py-1 rounded-full text-sm"
                 style={{
-                  backgroundColor: selectedListing.tradeType === "buy" ? "#22c55e" : "#ef4444",
+                  backgroundColor:
+                    selectedListing.tradeType === "buy" ? "#22c55e" : "#ef4444",
                   color: "white",
                 }}
               >
@@ -692,16 +740,16 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
               </div>
             </div>
 
-            <button 
+            <button
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 rounded-lg"
               onClick={async () => {
                 try {
-                  const response = await fetch('/api/trade-sessions', {
-                    method: 'POST',
+                  const response = await fetch("/api/trade-sessions", {
+                    method: "POST",
                     headers: {
-                      'Content-Type': 'application/json',
+                      "Content-Type": "application/json",
                     },
-                    credentials: 'include',
+                    credentials: "include",
                     body: JSON.stringify({
                       listingId: selectedListing.id,
                       vendorId: selectedListing.trader.id,
@@ -710,15 +758,15 @@ const P2PCryptoTradeContainer: React.FC<P2PCryptoTradeContainerProps> = ({
                   });
 
                   if (!response.ok) {
-                    throw new Error('Failed to create trade session');
+                    throw new Error("Failed to create trade session");
                   }
 
                   const data = await response.json();
-                  
+
                   // Navigate to the chat page
-                  window.location.href = `/dashboard/messages?chat=${data.id}`;
+                  window.location.href = `/dashboard/messages/${data.id}`;
                 } catch (error) {
-                  console.error('Error creating trade session:', error);
+                  console.error("Error creating trade session:", error);
                   // You might want to show an error message to the user here
                 }
               }}

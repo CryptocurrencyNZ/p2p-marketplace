@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { tradeSession } from "@/db/schema";
+import { messages, tradeSession } from "@/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    const session_id = newSession.id;
+    await db.insert(messages).values({
+      id: crypto.randomUUID(),
+      session_id,
+      fromVender: false,
+      content: "Hey 👋 i'm interesting in your offer ",
+    });
+
     return NextResponse.json(newSession);
   } catch (error) {
     console.error("Error creating trade session:", error);
@@ -41,4 +49,4 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
-} 
+}

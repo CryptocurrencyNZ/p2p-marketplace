@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "functions": {
+    "api/socket": {
+      "maxDuration": 300
+    }
+  },
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/api/socket",
+      "headers": [
+        { "key": "Connection", "value": "keep-alive" },
+        { "key": "Cache-Control", "value": "no-cache, no-transform" },
+        { "key": "Content-Type", "value": "text/event-stream" },
+        { "key": "X-Accel-Buffering", "value": "no" }
+      ]
+    }
+  ]
+} 

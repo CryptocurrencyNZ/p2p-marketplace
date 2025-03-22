@@ -19,6 +19,7 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
+import { useRealTimeMessages } from "@/lib/socket";
 
 interface Message {
   id: string;
@@ -64,6 +65,9 @@ const ChatRoom = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Use real-time message hook
+  const { isConnected, lastEvent, sendMessage } = useRealTimeMessages();
 
   // Fetch chat data from API
   useEffect(() => {
@@ -130,7 +134,42 @@ const ChatRoom = () => {
     }
   }, [chatId, currentChat]);
 
-  // Handle sending a message
+  // Process incoming real-time messages
+  useEffect(() => {
+    if (!lastEvent || !chatId) return;
+    
+    // Only process new message events for this chat
+    if (lastEvent.event === 'new-message' && lastEvent.data?.chatId === chatId) {
+      const { id, senderId, message, timestamp } = lastEvent.data;
+      
+      // Add the new message to the UI
+      const newMessage: Message = {
+        id: id || `recv-${Date.now()}`,
+        sender: "them",
+        content: message,
+        timestamp: new Date(timestamp).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        status: "received",
+      };
+      
+      // Update message list (avoid duplicates by checking ID)
+      setMessages(prev => {
+        // Don't add if already exists
+        if (prev.some(msg => msg.id === newMessage.id)) return prev;
+        return [...prev, newMessage];
+      });
+      
+      // Mark as read
+      fetch(`/api/chats/${chatId}/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }).catch(err => console.error("Error marking as read:", err));
+    }
+  }, [lastEvent, chatId]);
+
+  // Handle sending a message - updated to use SSE implementation
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() === "") return;
@@ -155,28 +194,24 @@ const ChatRoom = () => {
     messageInputRef.current?.focus();
 
     try {
-      // Send message to API
-      const response = await fetch("/api/chats/send-message", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chatId,
-          content: newMessage.content,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
+      // Use the new sendMessage function
+      if (currentChat?.user?.address) {
+        const success = await sendMessage(
+          currentChat.user.address,
+          newMessage.content,
+          chatId
+        );
+        
+        // Update message status based on result
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === tempId ? {
+            ...msg,
+            status: success ? "sent" : "error"
+          } : msg)),
+        );
+      } else {
+        throw new Error("No receiver address found");
       }
-
-      const data = await response.json();
-
-      // Replace the temporary message with the one from the server
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === tempId ? data.message : msg)),
-      );
     } catch (err) {
       console.error("Error sending message:", err);
 

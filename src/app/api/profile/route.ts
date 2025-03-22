@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { userProfile } from "@/db/schema";
+import { updateUserElo } from "@/lib/rep_system/updateRep";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -11,11 +12,10 @@ const AddUserInput = z.object({
   avatar: z.string().optional(),
   age: z.preprocess(
     // Convert to number if it's a string
-    (val) => (val === '' ? null : Number(val)),
-    z.number().optional()
-  )
+    (val) => (val === "" ? null : Number(val)),
+    z.number().optional(),
+  ),
 });
-
 
 export const GET = async () => {
   const session = await auth();
@@ -30,7 +30,10 @@ export const GET = async () => {
       .where(eq(userProfile.auth_id, session.user.id!));
 
     if (profile.length === 0) {
-      return NextResponse.json({ message: "Profile not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Profile not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json(profile[0]);
@@ -64,18 +67,19 @@ export const POST = async (request: Request) => {
           username: data.username,
           bio: data.bio,
           avatar: data.avatar,
-          age: data.age
+          age: data.age,
         })
         .where(eq(userProfile.auth_id, session.user.id!));
     } else {
       // Insert new profile
+      await updateUserElo(session.user.id!, -1);
       await db.insert(userProfile).values([
         {
           auth_id: session.user.id!, // ✅ Correctly using auth_id
           username: data.username,
           bio: data.bio,
           avatar: data.avatar,
-          age: data.age
+          age: data.age,
         },
       ]);
     }

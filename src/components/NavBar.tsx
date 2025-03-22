@@ -49,27 +49,17 @@ export default function Navbar() {
         active={isActive("/dashboard/profile")}
         label="Profile"
       />
-      <NavItem
+      {/* External link to scam guide */}
+      <a
         href="https://docs.google.com/document/d/1X-uiIvwA5mUeR9a5aYzNZiagbiYOuoK2zwUBUh7fXJs/edit?usp=sharing"
-        icon={
-          <div className="flex bg-green-600">
-            <a
-              href="https://docs.google.com/document/d/1X-uiIvwA5mUeR9a5aYzNZiagbiYOuoK2zwUBUh7fXJs/edit?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 bg-green-600 text-white font-medium text-sm rounded-lg shadow-lg transition-all duration-300 hover:bg-green-700 hover:shadow-xl flex items-center justify-center border border-green-400 shadow-green-200"
-              style={{
-                boxShadow:
-                  "0 0 10px rgba(74, 222, 128, 0.5), 0 0 20px rgba(74, 222, 128, 0.3)",
-              }}
-            >
-              View our scam guide
-            </a>
-          </div>
-        }
-        active={false}
-        label="View our scam guide"
-      />
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center"
+      >
+        <div className="text-gray-400">
+          <LogOut size={20} />
+        </div>
+      </a>
     </div>
   );
 

@@ -3,7 +3,7 @@ import { ethers, Signer, ContractTransactionResponse } from "ethers";
 import { ESCROW_ABI, ESCROW_ADDRESS } from "@/constants";
 import { Unlock, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
 
-// Define types for component props
+// this component is to release the crypto to the buyer (step 3)
 interface ReleaseFundsProps {
   signer: Signer | null;
 }
@@ -15,6 +15,7 @@ type StatusType = {
 };
 
 function ReleaseFunds({ signer }: ReleaseFundsProps): React.ReactElement {
+  // we should dynamically pass the tradeID into this (needs to stay the same through the flow)
   const [tradeId, setTradeId] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<StatusType>({ type: "", message: "" });

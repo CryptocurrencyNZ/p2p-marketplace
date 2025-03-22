@@ -3,6 +3,8 @@ import { ethers, Signer, ContractTransactionResponse } from "ethers";
 import { ESCROW_ABI, ESCROW_ADDRESS } from "@/constants";
 import { Lock, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
 
+// this component locks the crypto in the escrow (Step 1)
+
 // Define types for component props
 interface LockFundsProps {
   signer: Signer | null;

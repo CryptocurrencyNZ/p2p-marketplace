@@ -39,7 +39,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4 relative">
       {/* Background elements */}
-      <div className="absolute inset-0 bg-[url('/CNZ_logo.png')] bg-cover opacity-10"></div>
+      <div className="fixed scale-150 inset-0 w-screen h-screen bg-[url('/profile_background.png')] bg-cover bg-center opacity-80"></div>
 
       <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-green-500/20 blur-3xl"></div>
       <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-green-500/10 blur-3xl"></div>

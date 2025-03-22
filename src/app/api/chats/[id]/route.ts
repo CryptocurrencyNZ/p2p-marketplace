@@ -6,84 +6,64 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session || !session.user || !session.user.id)
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
 
   const { id: conversationId } = await params;
-  const url = new URL(request.url);
   const userId = session.user.id;
   
   // Get the 'since' parameter if it exists
-  const sinceParam = url.searchParams.get('since');
 
   try {
-    // Verify user is part of this conversation
     const userMessages = await db
       .select()
       .from(messages)
       .where(
         and(
           eq(messages.conversationID, conversationId),
-          or(eq(messages.senderId, userId), eq(messages.receiverId, userId))
-        )
+          or(eq(messages.senderId, userId), eq(messages.receiverId, userId)),
+        ),
       )
       .limit(1);
 
     if (userMessages.length === 0) {
-      return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
     }
 
-    // Check if the conversation is starred
+    const message = userMessages[0];
+    const otherUserId =
+      message.senderId === userId ? message.receiverId : message.senderId;
+
     const starredCheck = await db
       .select()
       .from(starredChats)
       .where(
         and(
           eq(starredChats.userId, userId),
-          eq(starredChats.conversationId, conversationId)
-        )
+          eq(starredChats.conversationId, conversationId),
+        ),
       )
       .limit(1);
 
     const isStarred = starredCheck.length > 0;
 
-    // Determine the other user in the conversation
-    const message = userMessages[0];
-    const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
+    const [otherUserProfile, otherUser, allMessages] = await Promise.all([
+      db.select().from(userProfile).where(eq(userProfile.auth_id, otherUserId)),
+      db.select().from(users).where(eq(users.id, otherUserId)),
+      db
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationID, conversationId))
+        .orderBy(asc(messages.createdAt)),
+    ]);
 
-    // Get other user details
-    const otherUserProfile = await db
-      .select()
-      .from(userProfile)
-      .where(eq(userProfile.auth_id, otherUserId));
-
-    const otherUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, otherUserId));
-
-    // Get all messages in the conversation
-    let allMessages = await db
-      .select()
-      .from(messages)
-      .where(eq(messages.conversationID, conversationId))
-      .orderBy(asc(messages.createdAt));
-    
-    // If 'since' parameter exists, filter messages after that timestamp
-    if (sinceParam) {
-      const sinceTimestamp = new Date(sinceParam);
-      
-      if (!isNaN(sinceTimestamp.getTime())) {
-        // If valid timestamp, filter the messages in memory
-        // This simplifies the query and avoids SQL typing issues
-        allMessages = allMessages.filter(msg => 
-          new Date(msg.createdAt) > sinceTimestamp
-        );
-      }
-    }
+    // maybe need if stuff here
 
     // Format messages for client
     const formattedMessages = allMessages.map((msg) => ({
@@ -119,4 +99,4 @@ export async function GET(
     console.error("Error fetching chat:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
-} 
+}

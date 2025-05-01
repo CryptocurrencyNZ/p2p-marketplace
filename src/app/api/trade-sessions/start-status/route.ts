@@ -12,6 +12,8 @@ const GetStatusSchema = z.object({
 const SetStatusSchema = z.object({
   sessionId: z.string(),
   status: z.boolean(),
+  userRole: z.enum(["vendor", "buyer"]).optional(),
+  stage: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -24,15 +26,19 @@ export async function GET(request: NextRequest) {
     const queryParams = Object.fromEntries(url.searchParams.entries());
     const { sessionId } = GetStatusSchema.parse(queryParams);
 
-    // Create new trade session
+    // Get trade session data
     const [sessionData] = await db
       .select()
       .from(tradeSession)
       .where(eq(tradeSession.id, sessionId));
 
+    if (!sessionData) {
+      return NextResponse.json({ error: "Trade session not found" }, { status: 404 });
+    }
+
     return NextResponse.json(sessionData);
   } catch (error) {
-    console.error("Error creating trade session:", error);
+    console.error("Error getting trade session:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
@@ -47,31 +53,52 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = await request.json();
-    const { sessionId, status } = SetStatusSchema.parse(payload);
+    const { sessionId, status, userRole = 'vendor', stage } = SetStatusSchema.parse(payload);
 
+    // Get current trade session data
     const [sessionData] = await db
       .select()
       .from(tradeSession)
       .where(eq(tradeSession.id, sessionId));
 
-    const isVendor = sessionData.vendor_id === session.user.id;
-    if (isVendor) {
-      const res = await db
-        .update(tradeSession)
-        .set({ vendor_start: status })
-        .where(eq(tradeSession.id, sessionId))
-        .returning();
-      return NextResponse.json(res);
-    } else {
-      const res = await db
-        .update(tradeSession)
-        .set({ vendor_start: status })
-        .where(eq(tradeSession.id, sessionId))
-        .returning();
-      return NextResponse.json(res);
+    if (!sessionData) {
+      return NextResponse.json({ error: "Trade session not found" }, { status: 404 });
     }
+
+    // Determine if the current user is the vendor or buyer
+    const isVendor = sessionData.vendor_id === session.user.id;
+    const isBuyer = sessionData.customer_id === session.user.id;
+
+    // Create update object
+    const updateData: Record<string, any> = {};
+
+    // Update the appropriate field based on user role
+    if (userRole === 'vendor' && isVendor) {
+      updateData.vendor_start = status;
+    } else if (userRole === 'buyer' && isBuyer) {
+      updateData.customer_start = status;
+    } else {
+      return NextResponse.json(
+        { error: "You don't have permission to update this field" },
+        { status: 403 }
+      );
+    }
+
+    // If stage is provided, update the stage as well
+    if (stage) {
+      updateData.stage = stage;
+    }
+
+    // Update the trade session
+    const res = await db
+      .update(tradeSession)
+      .set(updateData)
+      .where(eq(tradeSession.id, sessionId))
+      .returning();
+
+    return NextResponse.json(res);
   } catch (error) {
-    console.error("Error creating trade session:", error);
+    console.error("Error updating trade session:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }

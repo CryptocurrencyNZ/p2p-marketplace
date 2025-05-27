@@ -347,7 +347,7 @@ const P2PCryptoTradeMap: React.FC<P2PCryptoTradeMapProps> = ({
         try {
           const mapboxgl = window.mapboxgl;
           mapboxgl.accessToken =
-            "pk.eyJ1IjoiamF5ZGVuLWNueiIsImEiOiJjbThpZTljaW8wNmh0MmtvZTh4czRycWp1In0.P3UGPsCBIDnPIADynqDMrw";
+            "pk.eyJ1IjoiamF5ZGVuLWNueiIsImEiOiJjbWI2Z2s3YzUwMGw1Mm5weHJzYm5tczljIn0.dFeNfqWca5tzBls9vODJiA";
 
           // New Zealand coordinates
           const nzCenter = [172.8344, -41.5]; // [longitude, latitude]
